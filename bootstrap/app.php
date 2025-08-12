@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //$middleware->append(\App\Http\Middleware\JwtMiddleware::class);
         $middleware->alias([
             'jwt' => \App\Http\Middleware\JwtMiddleware::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

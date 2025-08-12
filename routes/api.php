@@ -1,21 +1,36 @@
 <?php
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\ActionController;
 
 
 
-
-
-
-
+// Các route auth (login, register, logout, me)
 Route::prefix('auth')->group(function () {
-
-    // Routes không cần token:
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
 
-    // Routes cần token mới truy cập được:
     Route::middleware('jwt')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
+
+        // Quản lý user trong auth, vì muốn nó nằm trong auth
+        Route::prefix('users')->group(function () {
+            Route::get('/', [UserController::class, 'index'])->middleware('permission:user_management,view');
+            Route::post('/', [UserController::class, 'store'])->middleware('permission:user_management,add');
+            Route::put('/{id}', [UserController::class, 'update'])->middleware('permission:user_management,edit');
+            Route::delete('/{id}', [UserController::class, 'destroy'])->middleware('permission:user_management,delete');
+        });
     });
 });
+
+// Route riêng cho actions, nằm ngoài auth, nhưng vẫn cần token (jwt)
+Route::middleware('jwt')->prefix('actions')->group(function () {
+    Route::get('/', [ActionController::class, 'index'])->name('actions.index');
+    Route::post('/', [ActionController::class, 'store'])->name('actions.store');
+    Route::get('/{action}', [ActionController::class, 'show'])->name('actions.show');
+    Route::put('/{action}', [ActionController::class, 'update'])->name('actions.update');
+    Route::delete('/{action}', [ActionController::class, 'destroy'])->name('actions.destroy');
+});
+
+
