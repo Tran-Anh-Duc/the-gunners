@@ -42,4 +42,31 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class);
+    }
+
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class);
+    }
+
+    public function hasPermission($permissionName)
+    {
+        return $this->permissions()->where('name', $permissionName)->exists()
+            || $this->roles()->whereHas('permissions', function ($q) use ($permissionName) {
+                $q->where('name', $permissionName);
+            })->exists();
+    }
+
+    public function hasRole($roleName)
+    {
+        return $this->roles()->where('name', $roleName)->exists();
+    }
+
+
+
 }
