@@ -54,15 +54,11 @@ class ActionController extends Controller
         try {
 
             $getData = $this->actionRepository->store($data);
-            echo '<pre>';
-            print_r($getData);
-            echo '</pre>';
-            die();
             DB::commit();
             $response = [
                 Controller::STATUS => Controller::HTTP_OK,
                 Controller::MESSAGE => Controller::SUCCESS,
-                Controller::DATA => $get_data,
+                Controller::DATA => $getData,
             ];
 
             return response()->json($response);
