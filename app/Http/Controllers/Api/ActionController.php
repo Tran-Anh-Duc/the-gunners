@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreActionRequest;
 use App\Models\Action;
 use App\Repositories\ActionRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Traits\ApiResponse;
 
 class ActionController extends Controller
 {
+    use ApiResponse;
     protected $actionRepository;
 
     public function __construct(ActionRepository $actionRepository)
@@ -23,15 +26,24 @@ class ActionController extends Controller
 
     public function index()
     {
+        try {
+            $get_data = Action::query()->get()->toArray();
+            return $this->successResponse(
+                __('messages.action_list'),
+                'action_list',
+                Controller::HTTP_OK,
+                $get_data,
+            );
+        }catch (\Exception $e)
+        {
+            return $this->errorResponse(
+                __('messages.action_failed'),
+                'action_failed',
+                Controller::ERRORS,
+                $get_data,
 
-        $get_data = Action::query()->get()->toArray();
-        $response = [
-            Controller::STATUS => Controller::HTTP_OK,
-            Controller::MESSAGE => Controller::SUCCESS,
-            Controller::DATA => $get_data,
-        ];
-        return response()->json($response);
-
+            );
+        }
     }
 
     /**
@@ -45,32 +57,42 @@ class ActionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreActionRequest $request)
     {
 
         $data = $request->all();
 
         DB::beginTransaction();
         try {
-
             $getData = $this->actionRepository->store($data);
-            DB::commit();
-            $response = [
-                Controller::STATUS => Controller::HTTP_OK,
-                Controller::MESSAGE => Controller::SUCCESS,
-                Controller::DATA => $getData,
-            ];
+            if($getData['status'] == 422){
+                return $this->successResponse(
+                    __('messages.action_failed'),
+                    'action_failed',
+                    Controller::ERRORS,
+                    $get_data,
 
-            return response()->json($response);
+            );
+            }elseif($getData['status'] == 200){
+                $resultData = $getData['data'];
+                DB::commit();
+                return $this->successResponse(
+                    __('messages.action_list'),
+                    'action_list',
+                    Controller::HTTP_OK,
+                    $resultData,
+            );
+            }
         }catch (\Exception $e){
             DB::rollBack();
-            $response = [
-                Controller::STATUS => Controller::HTTP_UNPROCESSABLE_ENTITY,
-                Controller::MESSAGE => Controller::ERRORS,
-                Controller::DATA => $e->getMessage(),
-            ];
-        }
+            return $this->errorResponse(
+                __('messages.action_failed'),
+                'action_failed',
+                Controller::ERRORS,
+                $get_data,
 
+            );
+        }
 
     }
 

@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'jwt' => \App\Http\Middleware\JwtMiddleware::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
+            'SetLocale'  => \App\Http\Middleware\SetLocale::class,
+        ]);
+        // chạy cho tất cả route nhóm api
+        $middleware->group('api', [
+            'SetLocale',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
