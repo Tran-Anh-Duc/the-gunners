@@ -27,19 +27,48 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (Throwable $e, $request) {
-            if ($request->expectsJson()) {
+            $trace = $e->getTrace();
+            $firstTrace = $trace[0] ?? null;
 
-                // Lấy trace đầu tiên (nếu có)
-                $trace = $e->getTrace();
-                $firstTrace = $trace[0] ?? null;
-
-                return response()->json([
-                    'error'   => true,
-                    'message' => $e->getMessage(),
-                    'file'    => $firstTrace['file'] ?? $e->getFile(),
-                    'line'    => $firstTrace['line'] ?? $e->getLine(),
-                    'trace'   => $firstTrace,
-                ], 500);
-            }
+            return response()->json([
+                'error'   => true,
+                'message' => $e->getMessage(),
+                'file'    => $firstTrace['file'] ?? $e->getFile(),
+                'line'    => $firstTrace['line'] ?? $e->getLine(),
+                'trace'   => $firstTrace,
+            ], 500);
         });
     })->create();
+
+//->withExceptions(function (Exceptions $exceptions) {
+//    $exceptions->render(function (Throwable $e, $request) {
+//        $trace = $e->getTrace();
+//        $firstTrace = $trace[0] ?? null;
+//
+//        return response()->json([
+//            'error'   => true,
+//            'message' => $e->getMessage(),
+//            'file'    => $firstTrace['file'] ?? $e->getFile(),
+//            'line'    => $firstTrace['line'] ?? $e->getLine(),
+//            'trace'   => $firstTrace,
+//        ], 500);
+//    });
+
+//////////
+//->withExceptions(function (Exceptions $exceptions) {
+//    $exceptions->render(function (Throwable $e, $request) {
+//        if ($request->expectsJson()) {
+//
+//            // Lấy trace đầu tiên (nếu có)
+//            $trace = $e->getTrace();
+//            $firstTrace = $trace[0] ?? null;
+//
+//            return response()->json([
+//                'error'   => true,
+//                'message' => $e->getMessage(),
+//                'file'    => $firstTrace['file'] ?? $e->getFile(),
+//                'line'    => $firstTrace['line'] ?? $e->getLine(),
+//                'trace'   => $firstTrace,
+//            ], 500);
+//        }
+//    });

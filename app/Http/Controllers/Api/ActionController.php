@@ -73,7 +73,7 @@ class ActionController extends Controller
         try {
             $getData = $this->actionRepository->store($data);
             if($getData['status'] == 422){
-                return $this->successResponse(
+                return $this->errorResponse(
                     __('messages.action_failed'),
                     'action_failed',
                     Controller::ERRORS,
@@ -97,7 +97,6 @@ class ActionController extends Controller
                 'action_failed',
                 Controller::ERRORS,
                 '',
-
             );
         }
 
@@ -109,17 +108,32 @@ class ActionController extends Controller
     public function show(string $id)
     {
         try {
-
             $findData = $this->actionRepository->show($id);
-
+            if(!empty($findData) and $findData['status'] == 200){
+                return $this->successResponse(
+                    __('messages.action_list'),
+                    'action_list',
+                    Controller::HTTP_OK,
+                    $findData,
+                );
+            }elseif(!empty($findData) and $findData['status'] != 200) {
+                return $this->errorResponse(
+                    __('messages.action_failed'),
+                    'action_failed',
+                    Controller::HTTP_UNPROCESSABLE_ENTITY,
+                    '',
+                 );
+            }
             return $findData;
         }catch (\Exception $e)
         {
             \Log::error($e);
-
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 500); // HTTP 500
+            return $this->errorResponse(
+                $e->getMessage(),
+                'action_failed',
+                500,
+                '',
+            );
         }
     }
 

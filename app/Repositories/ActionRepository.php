@@ -52,21 +52,24 @@ class ActionRepository extends BaseRepository
 
     public function show($id)
     {
-
         if (!empty($id) and $id != ''){
-
-
             $getData = Action::find($id);
-            echo '<pre>';
-            print_r($getData->toArray());
-            echo '</pre>';
-            die();
-            $dataReturnMess = 'Tìm dữ liệu thành công';
-            $dataResponse = [
-                'status' => 200,
-                'message' => $dataReturnMess,
-                'data' => $getData,
-            ];
+            if (!empty($getData) and $getData != ''){
+                $dataReturnMess = 'Tìm dữ liệu thành công';
+                $dataResponse = [
+                    'status' => 200,
+                    'message' => $dataReturnMess,
+                    'data' => $getData,
+                ];
+            }else{
+                $dataReturnMess = 'Không tìm thấy dữ liệu';
+                $dataResponse = [
+                    'status' => 204,
+                    'message' => $dataReturnMess,
+                    'data' => '',
+                ];
+            }
+
         }else{
             $dataReturnMess = 'Không tìm thấy dữ liệu';
             $dataResponse = [
