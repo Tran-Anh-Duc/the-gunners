@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponse;
 use App\Traits\HasApiPagination;
+use function Carbon\this;
 
 class ActionController extends Controller
 {
@@ -95,7 +96,7 @@ class ActionController extends Controller
                 __('messages.action_failed'),
                 'action_failed',
                 Controller::ERRORS,
-                $get_data,
+                '',
 
             );
         }
@@ -107,7 +108,19 @@ class ActionController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try {
+
+            $findData = $this->actionRepository->show($id);
+
+            return $findData;
+        }catch (\Exception $e)
+        {
+            \Log::error($e);
+
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 500); // HTTP 500
+        }
     }
 
     /**

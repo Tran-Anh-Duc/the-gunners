@@ -17,12 +17,29 @@ return Application::configure(basePath: dirname(__DIR__))
             'jwt' => \App\Http\Middleware\JwtMiddleware::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'SetLocale'  => \App\Http\Middleware\SetLocale::class,
+            'ForceJson'=>\App\Http\Middleware\ForceJsonResponse::class,
         ]);
         // chạy cho tất cả route nhóm api
         $middleware->group('api', [
             'SetLocale',
+            'ForceJson',
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        //
+    ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->render(function (Throwable $e, $request) {
+            if ($request->expectsJson()) {
+
+                // Lấy trace đầu tiên (nếu có)
+                $trace = $e->getTrace();
+                $firstTrace = $trace[0] ?? null;
+
+                return response()->json([
+                    'error'   => true,
+                    'message' => $e->getMessage(),
+                    'file'    => $firstTrace['file'] ?? $e->getFile(),
+                    'line'    => $firstTrace['line'] ?? $e->getLine(),
+                    'trace'   => $firstTrace,
+                ], 500);
+            }
+        });
     })->create();

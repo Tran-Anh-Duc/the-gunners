@@ -28,9 +28,9 @@ Route::prefix('auth')->group(function () {
 Route::middleware('jwt')->prefix('actions')->group(function () {
     Route::get('/', [ActionController::class, 'index'])->name('actions.index');
     Route::post('/', [ActionController::class, 'store'])->name('actions.store');
-    Route::get('/{action}', [ActionController::class, 'show'])->name('actions.show');
-    Route::put('/{action}', [ActionController::class, 'update'])->name('actions.update');
-    Route::delete('/{action}', [ActionController::class, 'destroy'])->name('actions.destroy');
+    Route::get('/{id}', [ActionController::class, 'show'])->name('actions.show');
+    Route::put('/{id}', [ActionController::class, 'update'])->name('actions.update');
+    Route::delete('/{id}', [ActionController::class, 'destroy'])->name('actions.destroy');
 });
 
 
