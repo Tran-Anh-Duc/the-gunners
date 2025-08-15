@@ -15,7 +15,7 @@ class JwtHelper
 
     public static function ttl(): int
     {
-        return (int) env('JWT_TTL', 3600);
+        return (int) env('JWT_TTL', 7200);
     }
 
     public static function generateToken($user)

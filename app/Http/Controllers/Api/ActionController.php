@@ -9,10 +9,12 @@ use App\Repositories\ActionRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponse;
+use App\Traits\HasApiPagination;
 
 class ActionController extends Controller
 {
     use ApiResponse;
+    use HasApiPagination;
     protected $actionRepository;
 
     public function __construct(ActionRepository $actionRepository)
@@ -27,12 +29,16 @@ class ActionController extends Controller
     public function index()
     {
         try {
-            $get_data = Action::query()->get()->toArray();
+            //$get_data = Action::query()->get()->toArray();
+            $query = Action::query();
+
+            // Chỉ cần gọi trait, truyền query builder
+            $data = $this->paginate($query);
             return $this->successResponse(
                 __('messages.action_list'),
                 'action_list',
                 Controller::HTTP_OK,
-                $get_data,
+                $data,
             );
         }catch (\Exception $e)
         {
