@@ -14,4 +14,6 @@ return [
     'delete_failed' => 'Xóa thất bại.',
     'invalid_parameters' => 'Tham số cung cấp không hợp lệ.',
     'permission_denied' => 'Bạn không có quyền thực hiện hành động này.',
+    'successful_recovery' => 'khôi phục thành công.',
+    'restore_failed' => 'khôi phục thất bại.',
 ];

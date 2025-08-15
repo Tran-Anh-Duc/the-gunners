@@ -140,30 +140,33 @@ class ActionController extends Controller
         $data = $request->all();
         DB::beginTransaction();
         try {
-            $getData = $this->actionRepository->update($data,$id);
+
+            $getData = $this->actionRepository->updateAction($data,$id);
             if(!empty($getData) and $getData['status'] == 200){
+                DB::commit();
                 return $this->successResponse(
-                    __('messages.action_list'),
+                    __('messages.update_success'),
                     'action_list',
                     Controller::HTTP_OK,
                     $getData,
                 );
             }elseif(!empty($getData) and $getData['status'] != 200){
                 return $this->errorResponse(
-                    __('messages.action_failed'),
+                    __('messages.update_failed'),
                     'action_failed',
                     Controller::HTTP_UNPROCESSABLE_ENTITY,
                     '',
                  );
             }
 
-          DB::commit();
+
 
         }catch (\Exception $e){
             \Log::error($e);
+            DB::rollBack();
             return $this->errorResponse(
                 $e->getMessage(),
-                'action_failed',
+                'update_failed',
                 500,
                 '',
             );
@@ -173,8 +176,74 @@ class ActionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        DB::beginTransaction();
+        try {
+
+            if (!empty($id) && $id != ''){
+                $action = Action::query()->where('id',$id)->first();
+                $action->delete();
+                DB::commit();
+                return $this->successResponse(
+                    __('messages.delete_success'),
+                    'delete_success',
+                    Controller::HTTP_OK,
+                    $action,
+                );
+            }else{
+                return $this->errorResponse(
+                    __('messages.update_failed'),
+                    'delete_failed',
+                    Controller::HTTP_UNPROCESSABLE_ENTITY,
+                    '',
+                 );
+            }
+
+        }catch (\Exception $e){
+            \Log::error($e);
+            DB::rollBack();
+            return $this->errorResponse(
+                $e->getMessage(),
+                'delete_failed',
+                500,
+                '',
+            );
+        }
+
+    }
+
+    public function restore($id)
+    {
+        DB::beginTransaction();
+        try {
+            $action = Action::withTrashed()->find($id);
+            if ($action) {
+                $action->restore();
+                return $this->successResponse(
+                    __('messages.successful_recovery'),
+                    'successful_recovery',
+                    Controller::HTTP_OK,
+                    $action,
+                );
+            }else{
+                return $this->errorResponse(
+                    __('messages.restore_failed'),
+                    'restore_failed',
+                    Controller::HTTP_UNPROCESSABLE_ENTITY,
+                    '',
+                 );
+            }
+        }catch (\Exception $e){
+            \Log::error($e);
+            DB::rollBack();
+            return $this->errorResponse(
+                $e->getMessage(),
+                'restore_failed',
+                500,
+                '',
+            );
+        }
+
     }
 }

@@ -82,10 +82,23 @@ class ActionRepository extends BaseRepository
         return  $dataResponse;
     }
 
-    public function update($data,$id)
+    public function updateAction($data,$id)
     {
-        if ((!empty($data) and $data !='') and !empty($id) and $id != ''){
+        if ((!empty($data) and $data !='') and (!empty($id) and $id != '')){
 
+            $dataUpdate = [
+                'key' => $data['key'],
+                'name' => $data['name'],
+                'description' => $data['description'],
+            ];
+            $getData = Action::query()->where('id',$id)->update($dataUpdate);
+
+            $dataReturnMess = 'Update dữ liệu thành công';
+            $dataResponse = [
+                'status' => 200,
+                'message' => $dataReturnMess,
+                'data' => $getData,
+            ];
 
         }else{
             $dataReturnMess = 'Không tìm thấy dữ liệu';
@@ -94,7 +107,7 @@ class ActionRepository extends BaseRepository
                 'message' => $dataReturnMess
             ];
         }
-
+        return  $dataResponse;
     }
 
 

@@ -31,6 +31,7 @@ Route::middleware('jwt')->prefix('actions')->group(function () {
     Route::get('/{id}', [ActionController::class, 'show'])->name('actions.show');
     Route::put('/{id}', [ActionController::class, 'update'])->name('actions.update');
     Route::delete('/{id}', [ActionController::class, 'destroy'])->name('actions.destroy');
+    Route::put('/{id}', [ActionController::class, 'restore'])->name('actions.restore');
 });
 
 
