@@ -244,6 +244,5 @@ class ActionController extends Controller
                 '',
             );
         }
-
     }
 }
