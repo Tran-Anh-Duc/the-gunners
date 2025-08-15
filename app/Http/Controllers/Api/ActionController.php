@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreActionRequest;
+use App\Http\Requests\UpdateActionRequest;
 use App\Models\Action;
 use App\Repositories\ActionRepository;
 use Illuminate\Http\Request;
@@ -51,14 +52,6 @@ class ActionController extends Controller
 
             );
         }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(Request $request)
-    {
-
     }
 
     /**
@@ -137,20 +130,44 @@ class ActionController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
+
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateActionRequest $request, string $id)
     {
-        //
+        $data = $request->all();
+        DB::beginTransaction();
+        try {
+            $getData = $this->actionRepository->update($data,$id);
+            if(!empty($getData) and $getData['status'] == 200){
+                return $this->successResponse(
+                    __('messages.action_list'),
+                    'action_list',
+                    Controller::HTTP_OK,
+                    $getData,
+                );
+            }elseif(!empty($getData) and $getData['status'] != 200){
+                return $this->errorResponse(
+                    __('messages.action_failed'),
+                    'action_failed',
+                    Controller::HTTP_UNPROCESSABLE_ENTITY,
+                    '',
+                 );
+            }
+
+          DB::commit();
+
+        }catch (\Exception $e){
+            \Log::error($e);
+            return $this->errorResponse(
+                $e->getMessage(),
+                'action_failed',
+                500,
+                '',
+            );
+        }
     }
 
     /**

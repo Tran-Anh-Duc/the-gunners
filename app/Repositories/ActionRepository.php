@@ -82,5 +82,20 @@ class ActionRepository extends BaseRepository
         return  $dataResponse;
     }
 
+    public function update($data,$id)
+    {
+        if ((!empty($data) and $data !='') and !empty($id) and $id != ''){
+
+
+        }else{
+            $dataReturnMess = 'Không tìm thấy dữ liệu';
+            $dataResponse = [
+                'status' => 422,
+                'message' => $dataReturnMess
+            ];
+        }
+
+    }
+
 
 }
