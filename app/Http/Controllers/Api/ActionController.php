@@ -81,7 +81,7 @@ class ActionController extends Controller
                     'action_list',
                     Controller::HTTP_OK,
                     $resultData,
-            );
+                 );
             }
         }catch (\Exception $e){
             DB::rollBack();
@@ -158,9 +158,6 @@ class ActionController extends Controller
                     '',
                  );
             }
-
-
-
         }catch (\Exception $e){
             \Log::error($e);
             DB::rollBack();
@@ -220,6 +217,7 @@ class ActionController extends Controller
             $action = Action::withTrashed()->find($id);
             if ($action) {
                 $action->restore();
+                DB::commit();
                 return $this->successResponse(
                     __('messages.successful_recovery'),
                     'successful_recovery',
