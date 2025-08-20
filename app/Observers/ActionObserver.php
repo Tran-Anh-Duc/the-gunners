@@ -27,7 +27,7 @@ class ActionObserver
                             $permission = Permission::create([
                                 'module_id' => $module->id,
                                 'action_id' => $action->id,
-                                'name'      => "{$module->name}_{$action->name}"
+                                'name'      => "{$module->name}_{$action->key}"
                             ]);
                         }
 
@@ -58,6 +58,38 @@ class ActionObserver
         } catch (\Throwable $e) {
 
             \Log::error("Error in ActionObserver@created: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Khi Action được cập nhật
+     */
+    public function updated(Action $action)
+    {
+        try {
+            if ($action->isDirty('name')) {
+                $modules = Module::all();
+
+                foreach ($modules as $module) {
+                    $permission = Permission::where('module_id', $module->id)
+                        ->where('action_id', $action->id)
+                        ->first();
+
+                    if ($permission) {
+                        $permission->update([
+                            'name' => "{$module->name}_{$action->key}"
+                        ]);
+
+                        logger()->info('Permission updated in ActionObserver@updated', [
+                            'module_id'     => $module->id,
+                            'action_id'     => $action->id,
+                            'permission_id' => $permission->id
+                        ]);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error("Error in ActionObserver@updated: " . $e->getMessage());
         }
     }
 

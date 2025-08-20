@@ -84,27 +84,32 @@ class ActionRepository extends BaseRepository
 
     public function updateAction($data,$id)
     {
-        if ((!empty($data) and $data !='') and (!empty($id) and $id != '')){
+        if ((!empty($data) and $data != '') and (!empty($id) and $id != '')) {
 
             $dataUpdate = [
                 'key' => $data['key'],
                 'name' => $data['name'],
                 'description' => $data['description'],
             ];
-            $getData = Action::query()->where('id',$id)->update($dataUpdate);
+            $module = Action::find($id);
+            if ($module) {
+                $module->update($dataUpdate);
 
-            $dataReturnMess = 'Update dữ liệu thành công';
-            $dataResponse = [
-                'status' => 200,
-                'message' => $dataReturnMess,
-                'data' => $getData,
-            ];
+                $dataResponse = [
+                    'status' => 200,
+                    'data'   => $module,
+                ];
+            } else {
+                $dataResponse = [
+                    'status' => 404,
+                    'message' => 'Module not found',
+                ];
+            }
+
 
         }else{
-            $dataReturnMess = 'Không tìm thấy dữ liệu';
             $dataResponse = [
                 'status' => 422,
-                'message' => $dataReturnMess
             ];
         }
         return  $dataResponse;

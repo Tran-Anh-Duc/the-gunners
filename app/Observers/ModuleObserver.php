@@ -62,4 +62,38 @@ class ModuleObserver
             // Không throw tiếp để tránh chặn việc tạo module
         }
     }
+
+    /**
+     * Khi Module được cập nhật
+     */
+    public function updated(Module $module)
+    {
+        try {
+            // Nếu tên module thay đổi, thì update lại name của permission
+
+            if ($module->isDirty('name')) {
+                $actions = \App\Models\Action::all();
+
+                foreach ($actions as $action) {
+                    $permission = Permission::where('module_id', $module->id)
+                        ->where('action_id', $action->id)
+                        ->first();
+
+                    if ($permission) {
+                        $permission->update([
+                            'name' => "{$module->name}_{$action->name}"
+                        ]);
+
+                        logger()->info('Permission updated', [
+                            'module_id'     => $module->id,
+                            'action_id'     => $action->id,
+                            'permission_id' => $permission->id
+                        ]);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error("Error in ModuleObserver@updated: " . $e->getMessage());
+        }
+    }
 }

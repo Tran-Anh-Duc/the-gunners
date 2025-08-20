@@ -76,7 +76,7 @@ class RoleController extends Controller
                 __('messages.create_failed'),
                 'create_failed',
                 Controller::ERRORS,
-                $get_data,
+                '',
             );
         }
     }
