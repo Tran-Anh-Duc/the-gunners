@@ -3,6 +3,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ActionController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\ModuleController;
 
 
 
@@ -40,10 +41,20 @@ Route::middleware('jwt')->prefix('actions')->group(function () {
 Route::middleware('jwt')->prefix('role')->group(function () {
     Route::get('/', [RoleController::class, 'index'])->name('role.index');
     Route::post('/', [RoleController::class, 'store'])->name('role.store');
-//    Route::get('/{id}', [ActionController::class, 'show'])->name('actions.show');
-//    Route::put('/{id}', [ActionController::class, 'update'])->name('actions.update');
-//    Route::delete('/{id}', [ActionController::class, 'destroy'])->name('actions.destroy');
-//    Route::put('/{id}', [ActionController::class, 'restore'])->name('actions.restore');
+    Route::get('/{id}', [RoleController::class, 'show'])->name('role.show');
+    Route::put('/{id}', [RoleController::class, 'update'])->name('actions.update');
+    Route::delete('/{id}', [RoleController::class, 'destroy'])->name('actions.destroy');
+    Route::put('/{id}', [RoleController::class, 'restore'])->name('actions.restore');
+});
+
+// Route riêng cho module, nằm ngoài auth, nhưng vẫn cần token (jwt)
+Route::middleware('jwt')->prefix('module')->group(function () {
+    Route::get('/', [ModuleController::class, 'index'])->name('role.index');
+//    Route::post('/', [RoleController::class, 'store'])->name('role.store');
+//    Route::get('/{id}', [RoleController::class, 'show'])->name('role.show');
+//    Route::put('/{id}', [RoleController::class, 'update'])->name('actions.update');
+//    Route::delete('/{id}', [RoleController::class, 'destroy'])->name('actions.destroy');
+//    Route::put('/{id}', [RoleController::class, 'restore'])->name('actions.restore');
 });
 
 

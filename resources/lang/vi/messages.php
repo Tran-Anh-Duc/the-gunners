@@ -6,6 +6,7 @@ return [
     'action_failed'  => 'Tạo hành động thất bại.',
     'not_found_id' => 'Không tìm thấy ID đã cung cấp.',
     'record_not_found' => 'Không tìm thấy bản ghi yêu cầu.',
+    'find_record_success' => 'Tìm thấy bản ghi yêu cầu.',
     'create_success' => 'Tạo mới thành công.',
     'update_success' => 'Cập nhật thành công.',
     'delete_success' => 'Xóa thành công.',
