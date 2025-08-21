@@ -32,14 +32,14 @@ class ActionRepository extends BaseRepository
             ];
 
             $getData = Action::create($dataCreate);
-            $dataReturnMess = 'Tạo dữ liệu thành công';
+
             $dataResponse = [
                 'status' => 200,
                 'message' => $dataReturnMess,
                 'data' => $getData,
             ];
         }else{
-            $dataReturnMess = 'Không tìm thấy dữ liệu';
+
             $dataResponse = [
                 'status' => 422,
                 'message' => $dataReturnMess
@@ -55,14 +55,14 @@ class ActionRepository extends BaseRepository
         if (!empty($id) and $id != ''){
             $getData = Action::find($id);
             if (!empty($getData) and $getData != ''){
-                $dataReturnMess = 'Tìm dữ liệu thành công';
+
                 $dataResponse = [
                     'status' => 200,
                     'message' => $dataReturnMess,
                     'data' => $getData,
                 ];
             }else{
-                $dataReturnMess = 'Không tìm thấy dữ liệu';
+
                 $dataResponse = [
                     'status' => 204,
                     'message' => $dataReturnMess,
@@ -71,7 +71,7 @@ class ActionRepository extends BaseRepository
             }
 
         }else{
-            $dataReturnMess = 'Không tìm thấy dữ liệu';
+
             $dataResponse = [
                 'status' => 422,
                 'message' => $dataReturnMess
@@ -86,11 +86,15 @@ class ActionRepository extends BaseRepository
     {
         if ((!empty($data) and $data != '') and (!empty($id) and $id != '')) {
 
-            $dataUpdate = [
-                'key' => $data['key'],
-                'name' => $data['name'],
-                'description' => $data['description'],
-            ];
+            $allowedFields = ['key', 'name', 'description'];
+            $dataUpdate = [];
+
+            foreach ($allowedFields as $value){
+                if (array_key_exists($value,$data)){
+                    $dataUpdate[$value] = $data[$value];
+                }
+            }
+
             $module = Action::find($id);
             if ($module) {
                 $module->update($dataUpdate);

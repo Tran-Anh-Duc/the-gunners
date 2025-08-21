@@ -85,11 +85,14 @@ class ModuleRepository extends BaseRepository
     {
         if ((!empty($data) and $data != '') and (!empty($id) and $id != '')) {
 
-            $dataUpdate = [
-                'name'  => $data['name'] ?? '',
-                'title' => $data['title'] ?? '',
-                'code'  => $data['code'] ?? '',
-            ];
+            $allowedFields = ['name', 'title', 'code'];
+            $dataUpdate = [];
+
+            foreach ($allowedFields as $value){
+                if (array_key_exists($value,$data)){
+                    $dataUpdate[$value] = $data[$value];
+                }
+            }
 
             $module = Module::find($id);
             if ($module) {

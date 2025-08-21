@@ -67,7 +67,7 @@ class ActionObserver
     public function updated(Action $action)
     {
         try {
-            if ($action->isDirty('name')) {
+            if ($action->isDirty('key')) {
                 $modules = Module::all();
 
                 foreach ($modules as $module) {

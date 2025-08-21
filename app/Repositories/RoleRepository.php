@@ -26,7 +26,6 @@ class RoleRepository extends BaseRepository
     public function getList()
     {
         $getAll = Role::query();
-        $dataReturnMess = 'Tìm dữ liệu thành công';
         $dataResponse = [
             'status' => 200,
             'message' => $dataReturnMess,
@@ -45,15 +44,13 @@ class RoleRepository extends BaseRepository
             ];
 
             $getData = Role::query()->create($dataCreate);
-
-            $dataReturnMess = 'Tìm dữ liệu thành công';
             $dataResponse = [
                 'status' => 200,
                 'message' => $dataReturnMess,
                 'data' => $getData,
             ];
         }else{
-            $dataReturnMess = 'Không tìm thấy dữ liệu';
+
             $dataResponse = [
                 'status' => 422,
                 'message' => $dataReturnMess
@@ -69,7 +66,6 @@ class RoleRepository extends BaseRepository
            if (!empty($id) and $id != ''){
 
                $getData = Role::query()->find($id);
-               $dataReturnMess = 'Tìm dữ liệu thành công';
                $dataResponse = [
                    'status' => 200,
                    'message' => $dataReturnMess,
@@ -77,7 +73,6 @@ class RoleRepository extends BaseRepository
                ];
 
            } else{
-               $dataReturnMess = 'Không tìm thấy dữ liệu';
                $dataResponse = [
                    'status' => 422,
                    'message' => $dataReturnMess
@@ -91,11 +86,14 @@ class RoleRepository extends BaseRepository
     {
         if ((!empty($data) and $data !='') and (!empty($id) and $id !='') ){
 
-            $dataUpdate = [
-                'name' => $data['name'] ?? '',
-                'title' => $data['title'] ?? '',
-                'code' => $data['code'] ?? '',
-            ];
+            $allowedFields = ['name', 'title', 'code'];
+            $dataUpdate = [];
+
+            foreach ($allowedFields as $value){
+                if (array_key_exists($value,$data)){
+                    $dataUpdate[$value] = $data[$value];
+                }
+            }
 
             $getData = Role::query()->where('id',$id)->update($dataUpdate);
             $findData = Role::query()->find($id);
