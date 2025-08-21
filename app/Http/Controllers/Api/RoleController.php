@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Action;
 use App\Models\Role;
+use App\Models\User;
+use App\Models\Permission;
 use App\Repositories\RoleRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponse;
 use App\Traits\HasApiPagination;
 use function Carbon\this;
+use Throwable;
 
 class RoleController extends Controller
 {
@@ -113,8 +116,7 @@ class RoleController extends Controller
         }
     }
 
-
-    public function update(Request $request, $id)
+    public function updateRole(Request $request, $id)
     {
         $data = $request->all();
 
@@ -145,7 +147,7 @@ class RoleController extends Controller
                 __('messages.update_failed'),
                 'update_failed',
                 Controller::ERRORS,
-                '',
+                $e->getMessage(),
             );
         }
 
@@ -182,7 +184,7 @@ class RoleController extends Controller
                 $e->getMessage(),
                 'delete_failed',
                 500,
-                '',
+                $e->getMessage(),
             );
         }
     }
@@ -216,7 +218,91 @@ class RoleController extends Controller
                 $e->getMessage(),
                 'restore_failed',
                 500,
-                '',
+                $e->getMessage(),
+            );
+        }
+    }
+
+    public function updateRoleUser(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+
+            $user = User::findOrFail($request->user_id);
+            $user->roles()->syncWithoutDetaching($request->role_ids);
+            DB::commit();
+            return $this->successResponse(
+                __('messages.update_success'),
+                'update_success',
+                Controller::HTTP_OK,
+                $user,
+                );
+
+        }catch (\Exception $e)
+        {
+            DB::rollBack();
+            return $this->errorResponse(
+                __('messages.update_failed'),
+                'update_failed',
+                Controller::ERRORS,
+                $e->getMessage(),
+            );
+        }
+
+    }
+
+    public function updatePermissionUser(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $user = User::findOrFail($request->user_id);
+            $user->permissions()->syncWithoutDetaching($request->permission_ids);
+
+            DB::commit();
+            return $this->successResponse(
+                __('messages.update_success'),
+                'update_success',
+                Controller::HTTP_OK,
+                $user,
+                );
+
+        }catch (\Exception $e)
+        {
+            DB::rollBack();
+            return $this->errorResponse(
+                __('messages.update_failed'),
+                'update_failed',
+                Controller::ERRORS,
+                $e->getMessage(),
+            );
+        }
+    }
+
+    public function updatePermissionRole(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $role = Role::findOrFail($request->role_id);
+
+            $role->permissionsRole()->sync($request->permission_ids);
+
+            DB::commit();
+            return $this->successResponse(
+                __('messages.update_success'),
+                'update_success',
+                Controller::HTTP_OK,
+                $role,
+                );
+
+        }catch (Throwable $e)
+        {
+            DB::rollBack();
+            \Log::error('failed: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return $this->errorResponse(
+                __('messages.update_failed'),
+                'update_failed',
+                Controller::HTTP_BAD_REQUEST,
+                $e->getMessage(),
             );
         }
     }

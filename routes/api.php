@@ -42,9 +42,16 @@ Route::middleware('jwt')->prefix('role')->group(function () {
     Route::get('/', [RoleController::class, 'index'])->name('role.index');
     Route::post('/', [RoleController::class, 'store'])->name('role.store');
     Route::get('/{id}', [RoleController::class, 'show'])->name('role.show');
-    Route::put('/{id}', [RoleController::class, 'update'])->name('actions.update');
-    Route::delete('/{id}', [RoleController::class, 'destroy'])->name('actions.destroy');
-    Route::put('/restore/{id}', [RoleController::class, 'restore'])->name('actions.restore');
+    Route::put('/{id}', [RoleController::class, 'updateRole'])->name('role.updateRole');
+    Route::delete('/{id}', [RoleController::class, 'destroy'])->name('role.destroy');
+    Route::put('/restore/{id}', [RoleController::class, 'restore'])->name('role.restore');
+
+    //update roles users.
+    Route::post('/update-role-user', [RoleController::class, 'updateRoleUser'])->name('role.update_role_user');
+    //update permissions users
+    Route::post('/update-permission-user', [RoleController::class, 'updatePermissionUser'])->name('role.permission_user');
+    //update  permissions roles
+    Route::post('/update-permission-role', [RoleController::class, 'updatePermissionRole'])->name('role.permission_role');
 });
 
 // Route riêng cho module, nằm ngoài auth, nhưng vẫn cần token (jwt)

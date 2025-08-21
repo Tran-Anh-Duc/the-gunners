@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Permission extends BaseModel
 {
+    protected $table = "permissions";
     protected $fillable = ['module_id','action_id','name','description'];
 
     public function module()
