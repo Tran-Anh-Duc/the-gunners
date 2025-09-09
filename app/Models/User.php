@@ -18,7 +18,8 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name','email','password','phone','avatar','role','is_active','last_login_at'
+        'name','email','password','phone','avatar','role','is_active','last_login_at','change_password_at','department_id',
+        'status_id'
     ];
 
     /**
@@ -67,6 +68,17 @@ class User extends Authenticatable
         return $this->roles()->where('name', $roleName)->exists();
     }
 
+    /*quan hẹ 1-n*/
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id', 'id');
+    }
+
+    /*quan he 1-1*/
+    public function status()
+    {
+        return $this->hasOne(UsersStatus::class, 'user_id', 'id');
+    }
 
 
 }

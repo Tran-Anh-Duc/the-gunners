@@ -26,11 +26,12 @@ class RoleRepository extends BaseRepository
     public function getList()
     {
         $getAll = Role::query();
+
         $dataResponse = [
             'status' => 200,
-            'message' => $dataReturnMess,
             'data' => $getAll,
         ];
+
         return $dataResponse;
     }
 

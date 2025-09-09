@@ -30,7 +30,9 @@ class RoleController extends Controller
     public function index()
     {
         try {
+
             $query = $this->roleRepository->getList();
+
             $data = $this->paginate($query['data']);
             return $this->successResponse(
                 __('messages.action_list'),
@@ -44,7 +46,7 @@ class RoleController extends Controller
                 __('messages.action_failed'),
                 'action_failed',
                 Controller::ERRORS,
-                $get_data,
+                '',
             );
         }
     }

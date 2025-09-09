@@ -35,14 +35,12 @@ class ActionRepository extends BaseRepository
 
             $dataResponse = [
                 'status' => 200,
-                'message' => $dataReturnMess,
                 'data' => $getData,
             ];
         }else{
 
             $dataResponse = [
                 'status' => 422,
-                'message' => $dataReturnMess
             ];
         }
 

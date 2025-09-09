@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ActionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ModuleController;
+use App\Http\Controllers\Api\DistributorController;
 
 
 
@@ -62,6 +63,11 @@ Route::middleware('jwt')->prefix('module')->group(function () {
     Route::put('/{id}', [ModuleController::class, 'update'])->name('module.update');
     Route::delete('/{id}', [ModuleController::class, 'destroy'])->name('module.destroy');
     Route::put('/restore/{id}', [ModuleController::class, 'restore'])->name('module.restore');
+});
+
+///router demo
+Route::middleware('jwt')->prefix('distributor')->group(function () {
+    Route::get('/', [DistributorController::class, 'index'])->name('distributor.index');
 });
 
 

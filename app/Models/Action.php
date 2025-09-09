@@ -9,6 +9,7 @@ class Action extends Model
 {
     use SoftDeletes;
     protected $table = "actions";
+
     protected $fillable = ['name', 'key', 'description','deleted_at'];
 
     public function permissions()
