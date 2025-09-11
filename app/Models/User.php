@@ -71,13 +71,13 @@ class User extends Authenticatable
     /*quan hẹ 1-n*/
     public function department()
     {
-        return $this->belongsTo(Department::class, 'department_id', 'id');
+        return $this->belongsTo(Departments::class, 'department_id', 'id');
     }
 
     /*quan he 1-1*/
     public function status()
     {
-        return $this->hasOne(UsersStatus::class, 'user_id', 'id');
+        return $this->belongsTo(UserStatus::class, 'status_id', 'id');
     }
 
 

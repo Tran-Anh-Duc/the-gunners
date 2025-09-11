@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UserStatus extends BaseModel
 {
-    use SoftDeletes;
+    //use SoftDeletes;
     protected $table = "users_status";
     protected $fillable = ['name'];
 
@@ -14,7 +14,7 @@ class UserStatus extends BaseModel
 
     public function usersStatus()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->hasOne(User::class);
     }
 
 }

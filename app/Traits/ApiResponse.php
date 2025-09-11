@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use League\Fractal\TransformerAbstract;
+
 trait ApiResponse
 {
     protected function successResponse(  $message = '',  $code = '',  $httpStatus = 200,$data = null)
@@ -26,5 +28,11 @@ trait ApiResponse
             'data'        => $data,
             // locale sẽ được middleware SetLocale chèn vào
         ], $httpStatus);
+    }
+
+    protected function transformData($data, TransformerAbstract $transformer)
+    {
+        $transformedData = fractal($data, $transformer);
+        return $transformedData->toArray();
     }
 }

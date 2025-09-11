@@ -9,6 +9,7 @@ use App\Models\Action;
 use App\Repositories\ActionRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use App\Traits\ApiResponse;
 use App\Traits\HasApiPagination;
 use function Carbon\this;

@@ -20,6 +20,7 @@ Route::prefix('auth')->group(function () {
         // Quản lý user trong auth, vì muốn nó nằm trong auth
         Route::prefix('users')->group(function () {
             Route::get('/', [UserController::class, 'index'])->middleware('permission:user_management,view');
+            Route::get('/{id}', [UserController::class, 'show'])->middleware('permission:user_management,view');
             Route::post('/', [UserController::class, 'store'])->middleware('permission:user_management,add');
             Route::put('/{id}', [UserController::class, 'update'])->middleware('permission:user_management,edit');
             Route::delete('/{id}', [UserController::class, 'destroy'])->middleware('permission:user_management,delete');
