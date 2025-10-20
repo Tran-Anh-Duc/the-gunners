@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UserStatus extends BaseModel
 {
-    //use SoftDeletes;
+    use SoftDeletes;
     protected $table = "users_status";
-    protected $fillable = ['name'];
+    protected $fillable = ['name','description'];
 
 
 

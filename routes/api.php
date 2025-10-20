@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ActionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ModuleController;
-use App\Http\Controllers\Api\DistributorController;
+use App\Http\Controllers\Api\UserStatusController;
 
 
 
@@ -66,9 +66,15 @@ Route::middleware('jwt')->prefix('module')->group(function () {
     Route::put('/restore/{id}', [ModuleController::class, 'restore'])->name('module.restore');
 });
 
-///router demo
-Route::middleware('jwt')->prefix('distributor')->group(function () {
-    Route::get('/', [DistributorController::class, 'index'])->name('distributor.index');
+
+// Route riêng cho user_status, nằm ngoài auth, nhưng vẫn cần token (jwt)
+Route::middleware('jwt')->prefix('user-status')->group(function () {
+    Route::get('/', [UserStatusController::class, 'index'])->name('user-status.index');
+    Route::post('/', [UserStatusController::class, 'store'])->name('user-status.store');
+    Route::get('/{id}', [UserStatusController::class, 'show'])->name('user-status.show');
+    Route::put('/{id}', [UserStatusController::class, 'update'])->name('user-status.update');
+    Route::delete('/{id}', [UserStatusController::class, 'destroy'])->name('user-status.destroy');
+    Route::put('/restore/{id}', [UserStatusController::class, 'restore'])->name('user-status.restore');
 });
 
 
