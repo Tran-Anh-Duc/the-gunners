@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Departments extends BaseModel
 {
-    //use SoftDeletes;
+    use SoftDeletes;
     protected $table = "departments";
-    protected $fillable = ['name'];
+    protected $fillable = ['name','description'];
 
     public function users()
     {

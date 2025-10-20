@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ActionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ModuleController;
 use App\Http\Controllers\Api\UserStatusController;
+use App\Http\Controllers\Api\DepartmentController;
 
 
 
@@ -75,6 +76,16 @@ Route::middleware('jwt')->prefix('user-status')->group(function () {
     Route::put('/{id}', [UserStatusController::class, 'update'])->name('user-status.update');
     Route::delete('/{id}', [UserStatusController::class, 'destroy'])->name('user-status.destroy');
     Route::put('/restore/{id}', [UserStatusController::class, 'restore'])->name('user-status.restore');
+});
+
+// Route riêng cho user_status, nằm ngoài auth, nhưng vẫn cần token (jwt)
+Route::middleware('jwt')->prefix('department')->group(function () {
+    Route::get('/', [DepartmentController::class, 'index'])->name('department.index');
+    Route::post('/', [DepartmentController::class, 'store'])->name('department.store');
+    Route::get('/{id}', [DepartmentController::class, 'show'])->name('department.show');
+    Route::put('/{id}', [DepartmentController::class, 'update'])->name('department.update');
+    Route::delete('/{id}', [DepartmentController::class, 'destroy'])->name('department.destroy');
+    Route::put('/restore/{id}', [DepartmentController::class, 'restore'])->name('department.restore');
 });
 
 
