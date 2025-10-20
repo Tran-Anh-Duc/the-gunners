@@ -26,9 +26,7 @@ class AuthController extends Controller
             'email'=>$request->email,
             'password'=>Hash::make($request->password),
         ]);
-
         $token = JwtHelper::generateToken($user);
-
         return response()->json([
             'access_token'=>$token,
             'token_type'=>'bearer',
@@ -41,12 +39,13 @@ class AuthController extends Controller
 
         $request->validate(['email'=>'required|email','password'=>'required']);
         $user = User::where('email', $request->email)->first();
+
+
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['error'=>'Unauthorized'], 401);
         }
 
         $user->update(['last_login_at' => now()]);
-
         $token = JwtHelper::generateToken($user);
 
         return response()->json([
