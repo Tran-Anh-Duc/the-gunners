@@ -72,7 +72,7 @@ class UserController extends Controller
      * {
      *   "department_id": 3,
      *   "is_main": 0,
-     *   "position": "Phụ trách kế toán, lập ngân sách và quản lý tài chính.",
+     *   "position": "1",
      *   "assigned_at": "2025-10-21 09:00:00",
      *   "action_type": 1 // 1 = thêm mới, 2 = cập nhật
      * }
@@ -128,16 +128,13 @@ class UserController extends Controller
      * Thêm mới hoặc cập nhật thông tin phòng ban cho nhân viên.
      *
      * @param  \Illuminate\Http\Request  $request  Dữ liệu gửi lên từ frontend (Vue / Postman)
-     * @param  int  $id  ID của nhân viên (user_id)
+     * @param  int  $id  ID của bảng user_department (id)
      * @return \Illuminate\Http\JsonResponse
      *
      * Dữ liệu mẫu (JSON):
      * {
-     *   "department_id": 3,
-     *   "is_main": 0,
-     *   "position": "Phụ trách kế toán, lập ngân sách và quản lý tài chính.",
      *   "assigned_at": "2025-10-21 09:00:00",
-     *   "action_type": 2 // 1 = thêm mới, 2 = cập nhật
+     *   "action_type": 2 // 2 = cập nhật
      * }
      */
     public function update_user_department(Request $request,$id)
@@ -155,24 +152,20 @@ class UserController extends Controller
             DB::beginTransaction();
             try {
                 $resultData = $this->userRepository->update_user_department($data,$id);
-                echo '<pre>';
-                print_r($resultData);
-                echo '</pre>';
-                die();
                 if (!empty($resultData) and $resultData != ''){
                     if ($resultData['status'] == 200){
                         $getData = $resultData['data'];
                         DB::commit();
                         return $this->successResponse(
-                            __('messages.update_failed'),
-                            'create_success',
+                            __('messages.update_success'),
+                            'update_success',
                             Controller::HTTP_OK,
                             $getData,
                         );
                     }else{
                         return $this->errorResponse(
-                            __('messages.create_failed'),
-                            'create_failed',
+                            __('messages.update_failed'),
+                            'update_failed',
                             Controller::ERRORS,
                             '',
                         );
@@ -182,7 +175,7 @@ class UserController extends Controller
             {
                 return $this->errorResponse(
                     __('messages.update_failed'),
-                    'create_failed',
+                    'update_failed',
                     Controller::ERRORS,
                     '',
                     );

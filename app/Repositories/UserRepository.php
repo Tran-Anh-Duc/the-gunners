@@ -31,10 +31,9 @@ class UserRepository extends BaseRepository
 
     public function update_user_department($data,$id)
     {
-        /*kiem tra user*/
-        $user = User::find($id);
-
-        if (!$user){
+        /*kiem tra tinh ton  cua ban ghi*/
+        $dataRecord = UserDepartment::find($id);
+        if (!$dataRecord){
             $dataResponse = [
                 'status' => 422,
             ];
@@ -51,22 +50,36 @@ class UserRepository extends BaseRepository
                 return  $dataResponse;
             }
 
-            if ($data['department_id'] == '' || $data['department_id'] == null){
-                $dataResponse = [
-                    'status' => 422,
-                ];
-                return  $dataResponse;
-            }
-
-            /*kiem tra du lieu trong bang user_department */
-
-            //$findData = UserDepartment::query()->where('id',)
+            /*kiem tra du lieu trong bang user_department $dataRecord */
+            $fields = [
+                'assigned_at',
+                'is_main',
+                'ended_at',
+            ];
 
             $dataUpdate = [];
+            foreach ($fields as $field){
+                if (isset($data[$field]) and $data[$field] != '' and $data[$field] != null){
+                    $dataUpdate[$field] = $data[$field];
+                }
+            }
 
+            /*truong hop chon bo phan lam chinh is_main = 1 => se up tat ca cac bo phan cua user
+                do ve 0 => roi moi update bo phan hien tai lam bo phan chinh
+            */
+            if (!empty($dataUpdate['is_main']) && $dataUpdate['is_main'] == 1) {
+                UserDepartment::query()
+                    ->where('user_id', $dataRecord->user_id)
+                    ->where('id', '<>', $id)
+                    ->update(['is_main' => 0]);
+            }
 
+            $dataRecord->update($dataUpdate);
 
-
+            $dataResponse = [
+                'status' => 200,
+                'data' => $dataRecord,
+            ];
 
         }else{
             $dataResponse = [
@@ -108,7 +121,6 @@ class UserRepository extends BaseRepository
                 'position' => $data['position'],
                 'assigned_at' => $data['assigned_at'],
             ];
-
             $resultData = UserDepartment::create($dataCreate);
 
             $dataResponse = [
