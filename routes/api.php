@@ -20,14 +20,23 @@ Route::prefix('auth')->group(function () {
 
         // Quản lý user trong auth, vì muốn nó nằm trong auth
         Route::prefix('users')->group(function () {
-            Route::get('/', [UserController::class, 'index'])->middleware('permission:user_management,view');
-            Route::get('/{id}', [UserController::class, 'show'])->middleware('permission:user_management,view');
+//            Route::get('/', [UserController::class, 'index'])->middleware('permission:user_management,view');
+//            Route::get('/{id}', [UserController::class, 'show'])->middleware('permission:user_management,view');
             Route::post('/', [UserController::class, 'store'])->middleware('permission:user_management,add');
             Route::put('/{id}', [UserController::class, 'update'])->middleware('permission:user_management,edit');
             Route::delete('/{id}', [UserController::class, 'destroy'])->middleware('permission:user_management,delete');
         });
     });
 });
+
+\Illuminate\Support\Facades\Route::middleware('jwt')->prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index']);
+    Route::get('/{id}', [UserController::class, 'show']);
+    Route::post('/create-user-department/{id}', [UserController::class, 'create_user_department']);
+    Route::post('/update-user-department/{id}', [UserController::class, 'update_user_department']);
+
+});
+
 
 // Route riêng cho actions, nằm ngoài auth, nhưng vẫn cần token (jwt)
 Route::middleware('jwt')->prefix('actions')->group(function () {

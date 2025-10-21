@@ -45,8 +45,8 @@ class UserTransform extends TransformerAbstract
             'role' => $entry->role,
             'last_login_at' => $entry->last_login_at,
             'change_password_at' => $entry->change_password_at,
-            'name_department' => $entry->department->name,
-            'name_status' => $entry->status->name,
+            'name_department' => $entry->department->name ?? '',
+            'name_status' => $entry->status->name ?? '',
 
         ];
         return  $data;

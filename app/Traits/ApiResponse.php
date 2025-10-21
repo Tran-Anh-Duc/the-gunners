@@ -20,6 +20,12 @@ trait ApiResponse
 
     protected function errorResponse( $message = '',  $code = '',  $httpStatus = 400, $data = null)
     {
+        if (!is_numeric($httpStatus)){
+            $httpStatus = 400;
+        }else{
+            $httpStatus = (int) $httpStatus;
+        }
+
         return response()->json([
             'status'      => false,
             'http_status' => $httpStatus,

@@ -80,5 +80,13 @@ class User extends Authenticatable
         return $this->belongsTo(UserStatus::class, 'status_id', 'id');
     }
 
+    //quan he 1-n Users and  Departments
+    public function departments()
+    {
+       return  $this->belongsToMany(Departments::class,'user_department')
+                 ->withPivot(['assigned_at', 'ended_at', 'is_main', 'position'])
+                 ->withTimestamps();     
+    }
+
 
 }
