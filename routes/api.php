@@ -78,7 +78,7 @@ Route::middleware('jwt')->prefix('user-status')->group(function () {
     Route::put('/restore/{id}', [UserStatusController::class, 'restore'])->name('user-status.restore');
 });
 
-// Route riêng cho user_status, nằm ngoài auth, nhưng vẫn cần token (jwt)
+// Route riêng cho Department, nằm ngoài auth, nhưng vẫn cần token (jwt)
 Route::middleware('jwt')->prefix('department')->group(function () {
     Route::get('/', [DepartmentController::class, 'index'])->name('department.index');
     Route::post('/', [DepartmentController::class, 'store'])->name('department.store');
