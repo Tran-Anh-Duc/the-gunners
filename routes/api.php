@@ -29,7 +29,7 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-\Illuminate\Support\Facades\Route::middleware('jwt')->prefix('users')->group(function () {
+Route::middleware('jwt')->prefix('users')->group(function () {
     Route::get('/', [UserController::class, 'index']);
     Route::get('/{id}', [UserController::class, 'show']);
     Route::post('/create-user-department/{id}', [UserController::class, 'create_user_department']);
