@@ -99,7 +99,7 @@ class TestController extends Controller
     //bài 5
     public function twoSum()
     {
-        $s = "babad";
+        $s = "abcdeffedcbaX";
         //chuỗi quá ngắn return luôn
         $n = strlen($s);
         if ($n < 2){
@@ -110,7 +110,7 @@ class TestController extends Controller
         $bestLen = 1;
 
         $expand = function ($l , $r) use ( $s ,$n ,&$bestLen, &$bestStart )  {
-                while ($l >= 0 and  $r < $n and $s[$i] === $s[$r] ){
+                while ($l >= 0 and  $r < $n and $s[$l] === $s[$r] ){
                     $curLen = $r -$l +1;
                     if ($curLen > $bestLen){
                         $bestLen = $curLen;
@@ -120,6 +120,14 @@ class TestController extends Controller
                     $r ++ ;
                 }
         };
+                                    //    l = 2 - r = 2 & l > 0 - r < 4 - a
+        for ($i = 0; $i < $n; $i++){
+            $expand($i,$i);
+            $expand($i,$i + 1);
+
+        }
+
+        return substr($s,$bestStart,$bestLen);
 
 
 
