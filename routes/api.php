@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ModuleController;
 use App\Http\Controllers\Api\UserStatusController;
 use App\Http\Controllers\Api\DepartmentController;
-
+use App\Http\Controllers\TestController;
 
 
 // Các route auth (login, register, logout, me)
@@ -97,4 +97,6 @@ Route::middleware('jwt')->prefix('department')->group(function () {
     Route::put('/restore/{id}', [DepartmentController::class, 'restore'])->name('department.restore');
 });
 
+
+Route::get('/test',[TestController::class,'twoSum']);
 
