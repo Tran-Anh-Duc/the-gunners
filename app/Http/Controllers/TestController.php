@@ -97,38 +97,40 @@ class TestController extends Controller
 //        return  ($mid1 + $mid2) /2;
 //    }
     //bài 5
+//    public function twoSum()
+//    {
+//        $s = "cbbd";
+//
+//        $n = strlen($s);
+//        if ($n < 2){
+//            return $s;
+//        }
+//        $bestStart = 0;
+//        $bestLen = 1;
+//
+//        $expand = function ($l , $r) use ( $s ,$n ,&$bestLen, &$bestStart )  {
+//                while ($l >= 0 and  $r < $n and $s[$l] === $s[$r] ){
+//                    $curLen = $r -$l +1;
+//                    if ($curLen > $bestLen){
+//                        $bestLen = $curLen;
+//                        $bestStart = $l;
+//                    }
+//                    $l -- ;
+//                    $r ++ ;
+//                }
+//        };
+//        for ($i = 0; $i < $n; $i++){
+//            $expand($i,$i);
+//            $expand($i,$i + 1);
+//        }
+//        return substr($s,$bestStart,$bestLen);
+//
+//
+//
+//    }
+    //bài 6
     public function twoSum()
     {
-        $s = "abcdeffedcbaX";
-        //chuỗi quá ngắn return luôn
-        $n = strlen($s);
-        if ($n < 2){
-            return $s;
-        }
-
-        $bestStart = 0;
-        $bestLen = 1;
-
-        $expand = function ($l , $r) use ( $s ,$n ,&$bestLen, &$bestStart )  {
-                while ($l >= 0 and  $r < $n and $s[$l] === $s[$r] ){
-                    $curLen = $r -$l +1;
-                    if ($curLen > $bestLen){
-                        $bestLen = $curLen;
-                        $bestStart = $l;
-                    }
-                    $l -- ;
-                    $r ++ ;
-                }
-        };
-                                    //    l = 2 - r = 2 & l > 0 - r < 4 - a
-        for ($i = 0; $i < $n; $i++){
-            $expand($i,$i);
-            $expand($i,$i + 1);
-
-        }
-
-        return substr($s,$bestStart,$bestLen);
-
 
 
     }
@@ -138,3 +140,4 @@ class TestController extends Controller
 //
 //bài 3 cho 1 chuỗi ký tự  , tìm chuỗi con lớn nhất , nhưng chuỗi con phải không có ký tự trùng nhau.
 //bài 4 cho 2 mảng  ký tự đã được sắp xếp nó là int  , tìm trung vị của 2 mảng số đã.
+//bài 5 cho 1 mảng ký tự , tìm ký tự đối xứng vd  babad => cần tìm bab hoặc aba => độ dài chuỗi đối xứng là 3.
