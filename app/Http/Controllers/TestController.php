@@ -131,7 +131,47 @@ class TestController extends Controller
     //bài 6
     public function twoSum()
     {
+        $nums1 = [1,2];
+        $nums2 = [3,4];
 
+        $i = $j = 0;
+
+        $merge  = [];
+
+        while ($i < count($nums1) and $j < count($nums2)){
+               if($nums1[$i] < $nums2[$j]){
+                    $merge[] = $nums1[$i];
+                    $i++;
+               }else{
+                    $merge[] = $nums2[$j];
+                    $j++;
+               }
+        }
+
+        while($i < count($nums1)){
+            $merge[] = $nums1[$i];
+            $i++;
+        }
+
+        while($j < count($nums2)){
+            $merge[] = $nums2[$j];
+            $j++;
+        }
+
+
+        //tong phan tu la le
+        $n = count($merge);
+        if($n % 2 == 1){
+             return $merge[$n/2];   
+        }
+
+        //tong phan tu la chan
+
+        $mid1 = $merge[$n/2];
+        $mid2 = $merge[$n/2 -1];
+
+       return  $result = ($mid1 + $mid2) /2;
+        
 
     }
 
