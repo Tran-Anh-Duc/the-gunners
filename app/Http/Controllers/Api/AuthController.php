@@ -29,10 +29,10 @@ class AuthController extends Controller
         $data = $request->all();
         $resultData = $this->userRepository->registerAuth($data);
         return $this->successResponse(
-            __('messages.register.action_created_success'),
-            __('messages.register.action_created_success'),
-            Controller::HTTP_OK,
-            $resultData
+            message: __('messages.register.action_created_success'),
+            code: 'register',
+            httpStatus: Controller::HTTP_OK,
+            data: $resultData,
         );
     }
 
