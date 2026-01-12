@@ -26,11 +26,6 @@ class AuthController extends Controller
 
     public function register(StoreUserRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|string|min:6'
-        ]);
         $data = $request->all();
         $resultData = $this->userRepository->registerAuth($data);
         return $this->successResponse(
