@@ -11,8 +11,12 @@ use App\Models\User;
 use App\Models\UserDepartment;
 use App\Repositories\BaseRepository;
 use App\Traits\ApiResponse;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 use function Illuminate\Cache\table;
 use function Termwind\ValueObjects\pr;
 
@@ -154,8 +158,7 @@ class UserRepository extends BaseRepository
                     'expires_in' => JwtHelper::ttl(),
                 ];
             });
-
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->errorResponse(
                 __('messages.register.action_created_failed'),
                 'create_failed',
@@ -163,6 +166,30 @@ class UserRepository extends BaseRepository
                 ''
             );
         }
+    }
+
+    public function loginUser($data): JsonResponse|array
+    {
+        $email = $data['email'] ?? '';
+        $password = $data['password'] ?? '';
+        $queryUser = $this->model::query();
+
+        $user = $queryUser->where('email', $email)->first();
+
+
+        if (empty($user) || !Hash::check($password,$user->password) ){
+            throw ValidationException::withMessages([
+                'email' => __('messages.user.user_login_failed'),
+            ]);
+        }
+
+        $user->update(['last_login_at' => now()]);
+        $token = JwtHelper::generateToken($user);
+        return [
+            'access_token'=>$token,
+            'token_type'=>'bearer',
+            'expires_in'=>JwtHelper::ttl()
+        ];
     }
 
     public function getListAllUser($search)
@@ -192,12 +219,28 @@ class UserRepository extends BaseRepository
                 'department:id,name',
                 'status:id,name',
             );
-        }catch (\Throwable $e){
+        }catch (Throwable $e){
               return $this->errorResponse(
                   message: ('messages.action_list_failed'),
                   code:  $search,
                   httpStatus: Controller::ERRORS,
               );
+        }
+    }
+
+    public function showUserById(int $id)
+    {
+        try {
+            $query = $this->model::query();
+            return $query->with('department:id,name','status:id,name')
+                         ->findOrFail($id);
+        }catch (ModelNotFoundException $e){
+            return $this->errorResponse(
+                message: __('messages.user.user_info_failed'),
+                code:'messages.action_list_failed'.$id,
+                httpStatus: Controller::ERRORS,
+                data: ''
+            );
         }
     }
 

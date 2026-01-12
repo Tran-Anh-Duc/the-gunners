@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -13,21 +14,22 @@ class Handler extends ExceptionHandler
         'password_confirmation',
     ];
 
-    public function register(): void
-    {
-        //
-    }
-
     public function render($request, Throwable $e)
     {
-        // Ép tất cả request API/Postman trả JSON
-        if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson()) {
+        if ($e instanceof ValidationException) {
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-                'trace'   => explode("\n", $e->getTraceAsString()),
+                'status' => false,
+                'code' => 'login_failed',
+                'message' => __('messages.user.user_login_failed'),
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        if (!config('app.debug')) {
+            return response()->json([
+                'status' => false,
+                'code' => 'server_error',
+                'message' => __('messages.server_error'),
             ], 500);
         }
 

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'validation_error' => 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường đã nhập.',
     'action_list' => 'Lấy danh sách thành công',
     'action_list_failed' => 'Lấy danh sách thất bại',
     'action_created' => 'Hành động đã được tạo thành công.',
@@ -24,6 +25,10 @@ return [
     ],
     'user' => [
         'user_list_success' => 'Danh sách người dùng đã được truy xuất thành công.',
-        'user_list_failed'  => 'Không thể truy xuất danh sách người dùng',
+        'user_list_failed' => 'Không thể truy xuất danh sách người dùng',
+        'user_info_success' => 'Thông tin người dùng đã được truy xuất thành công.',
+        'user_info_failed' => 'Không thể truy xuất thông tin người dùng',
+        'user_login_success' => 'Đăng nhập thành công.',
+        'user_login_failed' => 'Email hoặc mật khẩu không đúng.',
     ],
 ];

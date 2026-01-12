@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'validation_error' => 'The provided data is invalid. Please review the highlighted fields.',
     'action_list'    => 'Action list successfully',
     'action_list_failed'    => 'Action list failed',
     'action_created' => 'Action created successfully.',
@@ -22,6 +23,10 @@ return [
     'user' => [
         'user_list_success' => 'User list retrieved successfully',
         'user_list_failed'  => 'Failed to retrieve user list',
+        'user_info_success' => 'User info retrieved successfully',
+        'user_info_failed' => 'Failed to retrieve user info',
+        'user_login_failed' => 'The email or password you entered is incorrect. Please try again.',
+        'user_login_success' => 'Login successful.',
     ],
 
 ];

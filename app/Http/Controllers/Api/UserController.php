@@ -53,21 +53,16 @@ class UserController extends Controller
     }
 
     /*show chi tiết từng user*/
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        $users = User::with(
-           [
-               'department:id,name',
-               'status:id,name'
-           ]
-        )
-        ->findOrFail($id);
-
-        $dataTran = $this->transformData($users,$this->userTransform)['data'];
-        return response()->json([
-            'status' => 'success',
-            'data' => $dataTran
-        ]);
+        $result = $this->userRepository->showUserById($id);
+        $dataTranById = $this->transformData($result, $this->userTransform)['data'];
+        return $this->successResponse(
+            message: __('messages.user.user_info_success'),
+            code: 'user_info_success',
+            httpStatus: Controller::HTTP_OK,
+            data: $dataTranById,
+        );
     }
 
     /**

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LoginUserRequest;
+use App\Http\Requests\StoreUserRequest;
 use App\Repositories\UserRepository;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -16,13 +18,13 @@ use function Symfony\Component\HttpKernel\preBoot;
 class AuthController extends Controller
 {
     use ApiResponse;
-    protected $userRepository;
+    protected UserRepository $userRepository;
     public function __construct(UserRepository $userRepository)
     {
         $this->userRepository = $userRepository;
     }
 
-    public function register(Request $request)
+    public function register(StoreUserRequest $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -39,25 +41,16 @@ class AuthController extends Controller
         );
     }
 
-    public function login(Request $request)
+    public function login(LoginUserRequest $request)
     {
-
-        $request->validate(['email'=>'required|email','password'=>'required']);
-        $user = User::where('email', $request->email)->first();
-
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['error'=>'Unauthorized'], 401);
-        }
-
-        $user->update(['last_login_at' => now()]);
-        $token = JwtHelper::generateToken($user);
-
-        return response()->json([
-            'access_token'=>$token,
-            'token_type'=>'bearer',
-            'expires_in'=>JwtHelper::ttl()
-        ]);
+        $data = $request->all();
+        $user = $this->userRepository->loginUser($data);
+        return $this->successResponse(
+            message: __('messages.user.user_login_success'),
+            code: 'login_success',
+            httpStatus: Controller::HTTP_OK,
+            data: $user
+        );
     }
 
     public function me(Request $request)

@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class StoreActionRequest extends BaseFormRequest
+class LoginUserRequest extends BaseFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,18 +24,23 @@ class StoreActionRequest extends BaseFormRequest
     public function rules(): array
     {
         return [
-            'key'         => ['required', 'string', 'max:50', 'alpha_dash'],
-            'name'        => ['required', 'string', 'max:100'],
-            'description' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'email',
+            ],
+            'password' => [
+                'required',
+            ]
         ];
     }
 
     public function messages(): array
     {
         return [
-            'key.required' => __('validation.required', ['attribute' => 'key']),
-            'name.required' => __('validation.required', ['attribute' => 'name']),
-            'description.required' => __('validation.required', ['attribute' => 'description']),
+            'email.required' => __('validation.user.email.required'),
+            'email.email' => __('validation.user.email.email'),
+
+            'password.required' => __('validation.user.password.required'),
         ];
     }
 
