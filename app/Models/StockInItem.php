@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 //use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @mixin IdeHelperStockInItem
+ */
 class StockInItem extends Model
 {
     //use SoftDeletes;

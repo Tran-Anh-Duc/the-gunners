@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 //use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @mixin IdeHelperOrderItem
+ */
 class OrderItem extends Model
 {
     //use SoftDeletes;

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use App\Traits\ApiResponse;
 use App\Traits\HasApiPagination;
+use Throwable;
 use function Carbon\this;
 
 class ActionController extends Controller
@@ -48,15 +49,14 @@ class ActionController extends Controller
             return $this->errorResponse(
                 __('messages.action_failed'),
                 'action_failed',
-                Controller::ERRORS,
-                $get_data,
-
+                Controller::ERRORS
             );
         }
     }
 
     /**
      * Store a newly created resource in storage.
+     * @throws Throwable
      */
     public function store(StoreActionRequest $request)
     {
@@ -71,7 +71,6 @@ class ActionController extends Controller
                     __('messages.action_failed'),
                     'action_failed',
                     Controller::ERRORS,
-                    $get_data,
 
             );
             }elseif($getData['status'] == 200){

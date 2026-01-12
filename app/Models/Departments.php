@@ -4,6 +4,9 @@ namespace App\Models;
 use \App\Models\BaseModel;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @mixin IdeHelperDepartments
+ */
 class Departments extends BaseModel
 {
     use SoftDeletes;

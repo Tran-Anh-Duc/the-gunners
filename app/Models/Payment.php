@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 //use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @mixin IdeHelperPayment
+ */
 class Payment extends Model
 {
     //use SoftDeletes;

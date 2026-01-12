@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 //use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @mixin IdeHelperShipment
+ */
 class Shipment extends Model
 {
     //use SoftDeletes;

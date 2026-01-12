@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Repositories\UserRepository;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -13,25 +15,28 @@ use function Symfony\Component\HttpKernel\preBoot;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
+    protected $userRepository;
+    public function __construct(UserRepository $userRepository)
+    {
+        $this->userRepository = $userRepository;
+    }
+
     public function register(Request $request)
     {
         $request->validate([
-            'name'=>'required|string|max:255',
-            'email'=>'required|email|unique:users',
-            'password'=>'required|string|min:6'
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|string|min:6'
         ]);
-
-        $user = User::create([
-            'name'=>$request->name,
-            'email'=>$request->email,
-            'password'=>Hash::make($request->password),
-        ]);
-        $token = JwtHelper::generateToken($user);
-        return response()->json([
-            'access_token'=>$token,
-            'token_type'=>'bearer',
-            'expires_in'=>JwtHelper::ttl()
-        ]);
+        $data = $request->all();
+        $resultData = $this->userRepository->registerAuth($data);
+        return $this->successResponse(
+            __('messages.register.action_created_success'),
+            __('messages.register.action_created_success'),
+            Controller::HTTP_OK,
+            $resultData
+        );
     }
 
     public function login(Request $request)

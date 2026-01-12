@@ -17,6 +17,7 @@
         "spatie/laravel-fractal": "^6.3"
     },
     "require-dev": {
+        "barryvdh/laravel-ide-helper": "^3.6",
         "fakerphp/faker": "^1.23",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.13",
@@ -65,6 +66,9 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "ide-models": [
+            "@php artisan ide-helper:models -M"
         ]
     },
     "extra": {

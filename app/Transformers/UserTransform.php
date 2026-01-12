@@ -3,7 +3,6 @@
 namespace App\Transformers;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
 use League\Fractal\TransformerAbstract;
 
 class UserTransform extends TransformerAbstract
@@ -29,12 +28,13 @@ class UserTransform extends TransformerAbstract
     /**
      * A Fractal transformer.
      *
+     * @param User $entry
      * @return array
      */
-    public function transform(User $entry)
+    public function transform(User $entry): array
     {
 
-        $data = [
+        return [
             'id' => $entry->id,
             'department_id' => $entry->department_id,
             'status_id' => $entry->status_id,
@@ -47,9 +47,7 @@ class UserTransform extends TransformerAbstract
             'change_password_at' => $entry->change_password_at,
             'name_department' => $entry->department->name ?? '',
             'name_status' => $entry->status->name ?? '',
-
         ];
-        return  $data;
     }
 
 }

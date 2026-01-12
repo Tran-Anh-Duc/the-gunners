@@ -7,15 +7,21 @@ use App\Models\User;
 use App\Http\Controllers\Controller;
 use App\Repositories\UserRepository;
 use App\Traits\ApiResponse;
+use App\Traits\HasApiPagination;
 use App\Transformers\UserTransform;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Throwable;
 
 class UserController extends Controller
 {
     use ApiResponse;
-    protected $userTransform;
-    protected $userRepository;
+    use HasApiPagination;
+    protected UserTransform $userTransform;
+    protected UserRepository $userRepository;
     /**
      * Lấy danh sách tất cả user kèm role và permission.
      */
@@ -27,20 +33,23 @@ class UserController extends Controller
     }
 
     /* lấy danh sách các users*/
-    public function index()
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function index(Request $request)
     {
-        $users = User::with(
-            [
-                'department:id,name',
-                'status:id,name'
-            ]
-        )->get();
+        $search = $request->query();
+        $result = $this->userRepository->getListAllUser($search);
+        $pagination = $this->paginate(query: $result,transformer: $this->userTransform,defaultPerPage: 10);
 
-        $dataTran = $this->transformData($users,$this->userTransform)['data'];
-        return response()->json([
-            'status' => 'success',
-            'data' => $dataTran
-        ]);
+        return $this->successResponse(
+            message: __('messages.user.user_list_success'),
+            code: 'user_list_success',
+            httpStatus: Controller::HTTP_OK,
+            data: $pagination,
+        );
+
     }
 
     /*show chi tiết từng user*/
@@ -64,9 +73,9 @@ class UserController extends Controller
     /**
      * Thêm mới hoặc cập nhật thông tin phòng ban cho nhân viên.
      *
-     * @param  \Illuminate\Http\Request  $request  Dữ liệu gửi lên từ frontend (Vue / Postman)
-     * @param  int  $id  ID của nhân viên (user_id)
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request Dữ liệu gửi lên từ frontend (Vue / Postman)
+     * @param int $id ID của nhân viên (user_id)
+     * @return JsonResponse
      *
      * Dữ liệu mẫu (JSON):
      * {
@@ -76,8 +85,9 @@ class UserController extends Controller
      *   "assigned_at": "2025-10-21 09:00:00",
      *   "action_type": 1 // 1 = thêm mới, 2 = cập nhật
      * }
+     * @throws Throwable
      */
-    public function create_user_department(Request $request,$id)
+    public function create_user_department(Request $request, int $id)
     {
         $data = $request->all();
         if (!$data) {
@@ -127,17 +137,18 @@ class UserController extends Controller
     /**
      * Thêm mới hoặc cập nhật thông tin phòng ban cho nhân viên.
      *
-     * @param  \Illuminate\Http\Request  $request  Dữ liệu gửi lên từ frontend (Vue / Postman)
-     * @param  int  $id  ID của bảng user_department (id)
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request Dữ liệu gửi lên từ frontend (Vue / Postman)
+     * @param int $id ID của bảng user_department (id)
+     * @return JsonResponse
      *
      * Dữ liệu mẫu (JSON):
      * {
      *   "assigned_at": "2025-10-21 09:00:00",
      *   "action_type": 2 // 2 = cập nhật
      * }
+     * @throws Throwable
      */
-    public function update_user_department(Request $request,$id)
+    public function update_user_department(Request $request, int $id)
     {
         $data = $request->all();
         if (!$data) {

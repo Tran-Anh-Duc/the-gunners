@@ -2,6 +2,7 @@
 
 return [
     'action_list' => 'Lấy danh sách thành công',
+    'action_list_failed' => 'Lấy danh sách thất bại',
     'action_created' => 'Hành động đã được tạo thành công.',
     'action_failed'  => 'Tạo hành động thất bại.',
     'not_found_id' => 'Không tìm thấy ID đã cung cấp.',
@@ -17,4 +18,12 @@ return [
     'permission_denied' => 'Bạn không có quyền thực hiện hành động này.',
     'successful_recovery' => 'khôi phục thành công.',
     'restore_failed' => 'khôi phục thất bại.',
+    'register' => [
+        'action_created_failed' => 'Đăng ký thật bại',
+        'action_created_success' => 'Đăng ký thành công',
+    ],
+    'user' => [
+        'user_list_success' => 'Danh sách người dùng đã được truy xuất thành công.',
+        'user_list_failed'  => 'Không thể truy xuất danh sách người dùng',
+    ],
 ];

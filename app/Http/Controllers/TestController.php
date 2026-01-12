@@ -162,7 +162,7 @@ class TestController extends Controller
         //tong phan tu la le
         $n = count($merge);
         if($n % 2 == 1){
-             return $merge[$n/2];   
+             return $merge[$n/2];
         }
 
         //tong phan tu la chan
@@ -171,7 +171,7 @@ class TestController extends Controller
         $mid2 = $merge[$n/2 -1];
 
        return  $result = ($mid1 + $mid2) /2;
-        
+
 
     }
 
@@ -181,3 +181,6 @@ class TestController extends Controller
 //bài 3 cho 1 chuỗi ký tự  , tìm chuỗi con lớn nhất , nhưng chuỗi con phải không có ký tự trùng nhau.
 //bài 4 cho 2 mảng  ký tự đã được sắp xếp nó là int  , tìm trung vị của 2 mảng số đã.
 //bài 5 cho 1 mảng ký tự , tìm ký tự đối xứng vd  babad => cần tìm bab hoặc aba => độ dài chuỗi đối xứng là 3.
+
+
+//mỗi lần chạy composer ide-models  - ---   php artisan ide-helper:models -M

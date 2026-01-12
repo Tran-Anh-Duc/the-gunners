@@ -2,19 +2,42 @@
 
 namespace App\Traits;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use League\Fractal\TransformerAbstract;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+
 trait HasApiPagination
 {
     /**
-     * Phân trang, sort động dựa vào request
+     * Phân trang + sort động theo request.
      *
-     * @param \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $query
-     * @param array $defaultSort ['column' => 'id', 'order' => 'asc']
+     * @param Builder|\Illuminate\Database\Query\Builder $query
+     * @param TransformerAbstract|null $transformer
+     * @param array{
+     *     column: string,
+     *     order: string
+     * } $defaultSort
      * @param int $defaultPerPage
-     * @return array
+     *
+     * @return array{
+     *     items: Collection|array,
+     *     current_page: int,
+     *     last_page: int,
+     *     per_page: int,
+     *     total: int
+     * }
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    public function paginate($query, array $defaultSort = ['column' => 'id', 'order' => 'asc'], int $defaultPerPage = 3): array
+    public function paginate(Builder|\Illuminate\Database\Query\Builder $query, ?TransformerAbstract $transformer = null, array $defaultSort = ['column' => 'id', 'order' => 'asc'], int $defaultPerPage = 3): array
     {
-        //dd(request()->all());
+        // merge $defaultSort  nếu như ko truyền , hoạc truyền la array
+        $defaultSort = array_merge(
+            ['column' => 'id', 'order' => 'asc'],
+            $defaultSort
+        );
         // Lấy param từ FE (request)
         $perPage = request()->get('per_page', $defaultPerPage);
         $page = request()->get('page', 1);
@@ -29,9 +52,18 @@ trait HasApiPagination
         // Paginate
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
 
+        $items = $paginator->getCollection();
+
+
+        if ($transformer) {
+            $items = collect(
+                $this->transformData($items, $transformer)['data']
+            );
+        }
+
         // Trả về chuẩn FE
         return [
-            'items' => $paginator->items(),
+            'items' => $items,
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
             'per_page' => $paginator->perPage(),

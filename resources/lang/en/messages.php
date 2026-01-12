@@ -2,6 +2,7 @@
 
 return [
     'action_list'    => 'Action list successfully',
+    'action_list_failed'    => 'Action list failed',
     'action_created' => 'Action created successfully.',
     'action_failed'  => 'Failed to create action.',
     'not_found_id' => 'The provided ID was not found.',
@@ -14,4 +15,13 @@ return [
     'delete_failed' => 'Failed to delete.',
     'invalid_parameters' => 'Invalid parameters provided.',
     'permission_denied' => 'You do not have permission to perform this action.',
+    'register' => [
+        'action_created_failed'  => 'Registration failed',
+        'action_created_success' => 'Registration successful',
+    ],
+    'user' => [
+        'user_list_success' => 'User list retrieved successfully',
+        'user_list_failed'  => 'Failed to retrieve user list',
+    ],
+
 ];

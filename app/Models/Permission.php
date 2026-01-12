@@ -3,6 +3,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @mixin IdeHelperPermission
+ */
 class Permission extends BaseModel
 {
     protected $table = "permissions";

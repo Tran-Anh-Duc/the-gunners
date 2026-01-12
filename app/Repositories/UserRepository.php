@@ -3,12 +3,16 @@
 namespace App\Repositories;
 
 
+use App\Helpers\JwtHelper;
+use App\Http\Controllers\Controller;
 use App\Models\Action;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserDepartment;
 use App\Repositories\BaseRepository;
+use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use function Illuminate\Cache\table;
 use function Termwind\ValueObjects\pr;
 
@@ -16,10 +20,10 @@ use function Termwind\ValueObjects\pr;
 class UserRepository extends BaseRepository
 {
     //use CaculatePriceWareHouseTrait;
-
+    use ApiResponse;
     public function __construct(User $user)
     {
-        return $this->model = $user;
+        $this->model = $user;
     }
 
     public function getModel()
@@ -137,7 +141,65 @@ class UserRepository extends BaseRepository
         return  $dataResponse;
     }
 
+    public function registerAuth($data)
+    {
+        try {
+            return  DB::transaction(function () use ($data) {
+                $data['password'] = Hash::make($data['password']);
+                $result = User::query()->create($data);
+                $token = JwtHelper::generateToken($result);
+                return [
+                    'access_token' => $token,
+                    'token_type' => 'bearer',
+                    'expires_in' => JwtHelper::ttl(),
+                ];
+            });
 
+        } catch (\Throwable $e) {
+            return $this->errorResponse(
+                __('messages.register.action_created_failed'),
+                'create_failed',
+                Controller::ERRORS,
+                ''
+            );
+        }
+    }
+
+    public function getListAllUser($search)
+    {
+        try {
+            $name = $search['name'] ?? '';
+            $email = $search['email'] ?? '';
+            $role = $search['role'] ?? '';
+            $phone = $search['phone'] ?? '';
+
+            $query = $this->model::query();
+
+            if(!empty($name) and $name != ''){
+                $query->where('name', 'like', '%'.$name.'%');
+            }
+            if(!empty($email) and $email != ''){
+                $query->where('email', 'like', '%'.$email.'%');
+            }
+            if(!empty($role) and $role != ''){
+                $query->where('role', 'like', '%'.$role.'%');
+            }
+            if(!empty($phone) and $phone != ''){
+                $query->where('phone', 'like', '%'.$phone.'%');
+            }
+
+            return $query->with(
+                'department:id,name',
+                'status:id,name',
+            );
+        }catch (\Throwable $e){
+              return $this->errorResponse(
+                  message: ('messages.action_list_failed'),
+                  code:  $search,
+                  httpStatus: Controller::ERRORS,
+              );
+        }
+    }
 
 
 }
