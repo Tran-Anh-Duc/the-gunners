@@ -23,4 +23,23 @@ return [
             'confirmed' => 'Mật khẩu xác nhận không khớp.',
         ],
     ],
+    'user_status' => [
+        'name' => [
+            'required' => 'Tên trạng thái người dùng là bắt buộc.',
+            'string'   => 'Tên trạng thái người dùng phải là chuỗi.',
+            'max'      => 'Tên trạng thái người dùng không được vượt quá :max ký tự.',
+        ],
+        'slug' => [
+            'required' => 'Slug là bắt buộc.',
+            'string'   => 'Slug phải là chuỗi.',
+            'max'      => 'Slug không được vượt quá :max ký tự.',
+            'unique'   => 'Slug đã tồn tại.',
+            'regex'    => 'Slug chỉ được chứa chữ thường, số và dấu gạch dưới (_).',
+        ],
+        'description' => [
+            'string' => 'Mô tả phải là chuỗi.',
+            'max'    => 'Mô tả không được vượt quá :max ký tự.',
+        ],
+    ],
+
 ];

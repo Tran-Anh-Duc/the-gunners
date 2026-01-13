@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUserStatusRequest;
 use App\Models\Action;
 use App\Models\Role;
 use App\Models\User;
@@ -14,6 +15,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponse;
 use App\Traits\HasApiPagination;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use function Carbon\this;
 use Throwable;
 
@@ -21,7 +24,7 @@ class UserStatusController extends Controller
 {
     use ApiResponse;
     use HasApiPagination;
-    protected $userStatusRepository;
+    protected UserStatusRepository $userStatusRepository;
 
     public function __construct(UserStatusRepository $userStatusRepository)
     {
@@ -29,94 +32,45 @@ class UserStatusController extends Controller
     }
 
 
-    public function index()
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function index(Request $request)
     {
-        try {
-
-            $query = $this->userStatusRepository->getList();
-
-            $data = $this->paginate($query['data']);
-            return $this->successResponse(
-                __('messages.action_list'),
-                'action_list',
-                Controller::HTTP_OK,
-                $data,
-            );
-        }catch (\Exception $e)
-        {
-            return $this->errorResponse(
-                __('messages.action_failed'),
-                'action_failed',
-                Controller::ERRORS,
-                '',
-            );
-        }
+        $search = $request->query('name');
+        $query = $this->userStatusRepository->getAllListUserStatus($search);
+        $data = $this->paginate($query);
+        return $this->successResponse(
+            __('messages.users_status.list_success'),
+            'list_success',
+            Controller::HTTP_OK,
+            $data,
+        );
     }
 
-    public function store(Request $request)
+    public function store(StoreUserStatusRequest $request)
     {
-        //chỉ lấy dữ liệu từ body
-        $data = $request->post();
-        DB::beginTransaction();
-        try {
-            $resultData = $this->userStatusRepository->storeData($data);
-            if (!empty($resultData) and $resultData['status'] == 200){
-                $getData = $resultData['data'];
-                DB::commit();
-                return $this->successResponse(
-                    __('messages.create_success'),
-                    'create_success',
-                    Controller::HTTP_OK,
-                    $getData,
-                );
-            }elseif (!empty($resultData) and $resultData['status'] != 200){
-                return $this->errorResponse(
-                    __('messages.create_failed'),
-                    'create_failed',
-                    Controller::ERRORS,
-                    '',
-                );
-            }
-        }catch (\Exception $e)
-        {
-            return $this->errorResponse(
-                __('messages.create_failed'),
-                'create_failed',
-                Controller::ERRORS,
-                '',
-            );
-        }
+        $data = $request->all();
+        $resultData = $this->userStatusRepository->storeUserStatus($data);
+        return $this->successResponse(
+            message: __('messages.user_status.create_success'),
+            code: 'create_success',
+            httpStatus: Controller::HTTP_OK,
+            data: $resultData,
+        );
+
     }
 
     public function show($id)
     {
-        try {
-            $getData = $this->userStatusRepository->ShowData($id);
-            if (!empty($getData) and $getData['status'] == 200) {
-                return $this->successResponse(
-                    __('messages.find_record_success'),
-                    'find_record_success',
-                    Controller::HTTP_OK,
-                    $getData['data'],
-                );
-            } else {
-                return $this->errorResponse(
-                    __('messages.record_not_found'),
-                    'record_not_found',
-                    Controller::ERRORS,
-                    '',
-            );
-            }
-
-        }catch (\Exception $e)
-        {
-            return $this->errorResponse(
-                __('messages.not_found_id'),
-                'not_found_id',
-                Controller::ERRORS,
-                '',
-            );
-        }
+        $getData = $this->userStatusRepository->ShowUserStatusByID($id);
+        return $this->successResponse(
+            message: __('messages.users_status.user_status_show_success'),
+            code: 'user_status_show_success',
+            httpStatus: Controller::HTTP_OK,
+            data: $getData,
+        );
     }
 
     public function update(Request $request, $id)

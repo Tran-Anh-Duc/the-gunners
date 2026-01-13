@@ -53,9 +53,24 @@ class RbacSeeder extends Seeder
          --------------------------------------------------------------*/
         DB::table('users_status')->truncate();
         DB::table('users_status')->insert([
-            ['name' => 'Hoạt động', 'description' => 'Người dùng đang hoạt động', 'created_at' => $now],
-            ['name' => 'Tạm khóa', 'description' => 'Người dùng bị tạm khóa', 'created_at' => $now],
-            ['name' => 'Đã nghỉ việc', 'description' => 'Người dùng đã nghỉ việc', 'created_at' => $now],
+            [
+                'name'        => 'Hoạt động',
+                'slug'        => 'active',
+                'description' => 'Người dùng đang hoạt động',
+                'created_at'  => $now,
+            ],
+            [
+                'name'        => 'Tạm khóa',
+                'slug'        => 'suspended',
+                'description' => 'Người dùng bị tạm khóa',
+                'created_at'  => $now,
+            ],
+            [
+                'name'        => 'Đã nghỉ việc',
+                'slug'        => 'resigned',
+                'description' => 'Người dùng đã nghỉ việc',
+                'created_at'  => $now,
+            ],
         ]);
 
         /*--------------------------------------------------------------

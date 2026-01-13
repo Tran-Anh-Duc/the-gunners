@@ -28,5 +28,18 @@ return [
         'user_login_failed' => 'The email or password you entered is incorrect. Please try again.',
         'user_login_success' => 'Login successful.',
     ],
+    'user_status' => [
+        'list_success'      => 'User status list retrieved successfully.',
+        'list_failed'       => 'Failed to retrieve user status list.',
+        'show_success'      => 'User status retrieved successfully.',
+        'not_found'         => 'User status not found.',
+        'create_success'    => 'User status created successfully.',
+        'create_failed'     => 'Failed to create user status.',
+        'update_success'    => 'User status updated successfully.',
+        'update_failed'     => 'Failed to update user status.',
+        'delete_success'    => 'User status deleted successfully.',
+        'delete_failed'     => 'Failed to delete user status.',
+    ],
+
 
 ];

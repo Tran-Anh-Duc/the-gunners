@@ -11,7 +11,7 @@ class UserStatus extends BaseModel
 {
     use SoftDeletes;
     protected $table = "users_status";
-    protected $fillable = ['name','description'];
+    protected $fillable = ['name','description','slug'];
 
 
 

@@ -34,7 +34,8 @@
         },
         "files": [
             "app/Helpers/UserHelper.php",
-            "app/Helpers/JwtHelper.php"
+            "app/Helpers/JwtHelper.php",
+            "app/Helpers/string.php"
         ]
     },
     "autoload-dev": {

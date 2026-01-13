@@ -31,4 +31,17 @@ return [
         'user_login_success' => 'Đăng nhập thành công.',
         'user_login_failed' => 'Email hoặc mật khẩu không đúng.',
     ],
+    'user_status' => [
+        'list_success'   => 'Danh sách trạng thái người dùng đã được truy xuất thành công.',
+        'list_failed'    => 'Không thể truy xuất danh sách trạng thái người dùng.',
+        'show_success'   => 'Thông tin trạng thái người dùng đã được truy xuất thành công.',
+        'not_found'      => 'Không tìm thấy trạng thái người dùng.',
+        'create_success' => 'Tạo trạng thái người dùng thành công.',
+        'create_failed'  => 'Không thể tạo trạng thái người dùng.',
+        'update_success' => 'Cập nhật trạng thái người dùng thành công.',
+        'update_failed'  => 'Không thể cập nhật trạng thái người dùng.',
+        'delete_success' => 'Xóa trạng thái người dùng thành công.',
+        'delete_failed'  => 'Không thể xóa trạng thái người dùng.',
+    ],
+
 ];
