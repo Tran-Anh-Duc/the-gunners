@@ -658,6 +658,7 @@ namespace App\Models{
 /**
  * @property int $id
  * @property string|null $name
+ * @property string|null $slug
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property string|null $description
@@ -672,6 +673,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserStatus whereDescription($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserStatus whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserStatus whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserStatus whereSlug($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserStatus whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserStatus withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UserStatus withoutTrashed()

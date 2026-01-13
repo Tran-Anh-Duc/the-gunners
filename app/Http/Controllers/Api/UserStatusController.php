@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserStatusRequest;
+use App\Http\Requests\UpdateUserStatusRequest;
 use App\Models\Action;
 use App\Models\Role;
 use App\Models\User;
@@ -11,6 +12,7 @@ use App\Models\UserStatus;
 use App\Models\Permission;
 use App\Repositories\RoleRepository;
 use App\Repositories\UserStatusRepository;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponse;
@@ -36,7 +38,7 @@ class UserStatusController extends Controller
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $search = $request->query('name');
         $query = $this->userStatusRepository->getAllListUserStatus($search);
@@ -51,135 +53,48 @@ class UserStatusController extends Controller
 
     public function store(StoreUserStatusRequest $request)
     {
-        $data = $request->all();
-        $resultData = $this->userStatusRepository->storeUserStatus($data);
-        return $this->successResponse(
-            message: __('messages.user_status.create_success'),
-            code: 'create_success',
-            httpStatus: Controller::HTTP_OK,
-            data: $resultData,
-        );
-
+       $data = $request->all();
+       return $this->handleRepoResult(
+           result: $this->userStatusRepository->storeUserStatus($data),
+           successMessage: __('messages.users_status.store_success'),
+           code: 'store_success'
+       );
     }
 
     public function show($id)
     {
-        $getData = $this->userStatusRepository->ShowUserStatusByID($id);
-        return $this->successResponse(
-            message: __('messages.users_status.user_status_show_success'),
-            code: 'user_status_show_success',
-            httpStatus: Controller::HTTP_OK,
-            data: $getData,
+        return $this->handleRepoResult(
+            result: $this->userStatusRepository->showUserStatusById($id),
+            successMessage: __('messages.users_status.show_success'),
+            code: 'show_success',
         );
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateUserStatusRequest $request, $id)
     {
         $data = $request->all();
-
-        DB::beginTransaction();
-        try {
-            $getData = $this->userStatusRepository->UpdateRoleData($data, $id);
-            if (!empty($getData) and $getData['status'] == 200) {
-
-                DB::commit();
-                return $this->successResponse(
-                    __('messages.update_success'),
-                    'update_success',
-                    Controller::HTTP_OK,
-                    $getData['data'],
-                );
-            } else {
-                return $this->errorResponse(
-                    __('messages.update_failed'),
-                    'update_failed',
-                    Controller::ERRORS,
-                    '',
-            );
-            }
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return $this->errorResponse(
-                __('messages.update_failed'),
-                'update_failed',
-                Controller::ERRORS,
-                $e->getMessage(),
-            );
-        }
-
+        return $this->handleRepoResult(
+            result:  $this->userStatusRepository->updateUserStatus($data, $id),
+            successMessage: __('messages.users_status.update_success'),
+            code: 'update_success',
+        );
     }
 
     public function destroy($id)
     {
-        DB::beginTransaction();
-        try {
-            if (!empty($id) && $id != ''){
-                $action = UserStatus::query()->where('id',$id)->first();
-                $action->delete();
-                DB::commit();
-                return $this->successResponse(
-                    __('messages.delete_success'),
-                    'delete_success',
-                    Controller::HTTP_OK,
-                    $action,
-                );
-            }else{
-                return $this->errorResponse(
-                    __('messages.delete_failed'),
-                    'delete_failed',
-                    Controller::HTTP_UNPROCESSABLE_ENTITY,
-                    '',
-                 );
-            }
-
-
-        }catch (\Exception $e){
-            \Log::error($e);
-            DB::rollBack();
-            return $this->errorResponse(
-                $e->getMessage(),
-                'delete_failed',
-                500,
-                $e->getMessage(),
-            );
-        }
+        return $this->handleRepoResult(
+            result: $this->userStatusRepository->destroyUserStatusById($id),
+            successMessage: __('messages.users_status.delete_success'),
+            code: 'delete_success',
+        );
     }
 
     public function restore($id)
     {
-        DB::beginTransaction();
-        try {
-            $action = UserStatus::withTrashed()->find($id);
-            if ($action) {
-                $action->restore();
-                DB::commit();
-                return $this->successResponse(
-                    __('messages.successful_recovery'),
-                    'successful_recovery',
-                    Controller::HTTP_OK,
-                    $action,
-                );
-            }else{
-                return $this->errorResponse(
-                    __('messages.restore_failed'),
-                    'restore_failed',
-                    Controller::HTTP_UNPROCESSABLE_ENTITY,
-                    '',
-                 );
-            }
-        }catch (\Exception $e){
-            \Log::error($e);
-            DB::rollBack();
-            return $this->errorResponse(
-                $e->getMessage(),
-                'restore_failed',
-                500,
-                $e->getMessage(),
-            );
-        }
+        return $this->handleRepoResult(
+            result:  $this->userStatusRepository->restoreUserStatusById($id),
+            successMessage:  __('messages.users_status.restore_success'),
+            code: 'restore_success'
+        );
     }
-
-
-
-
 }

@@ -28,7 +28,7 @@ return [
         'user_login_failed' => 'The email or password you entered is incorrect. Please try again.',
         'user_login_success' => 'Login successful.',
     ],
-    'user_status' => [
+    'users_status' => [
         'list_success'      => 'User status list retrieved successfully.',
         'list_failed'       => 'Failed to retrieve user status list.',
         'show_success'      => 'User status retrieved successfully.',
@@ -39,6 +39,10 @@ return [
         'update_failed'     => 'Failed to update user status.',
         'delete_success'    => 'User status deleted successfully.',
         'delete_failed'     => 'Failed to delete user status.',
+        'user_status_not_found' => 'User status not found.',
+        'restore_success' => 'User status restored successfully.',
+        'restore_failed'  => 'Failed to restore user status.',
+        'cannot_delete_in_use'  => 'This user status is currently assigned to users and cannot be deleted.',
     ],
 
 

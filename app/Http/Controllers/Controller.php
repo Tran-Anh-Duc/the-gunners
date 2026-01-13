@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Http\JsonResponse;
 //use Illuminate\Routing\Controller as BaseController;
 
 class Controller
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
-
+    use ApiResponse;
     const DESC = 'DESC';
     const ASC = 'ASC';
 
@@ -152,5 +154,24 @@ class Controller
         ];
         return response()->json($response);
     }
+
+    protected function handleRepoResult(
+        $result,
+        string $successMessage,
+        string $code = 'success',
+        int $httpStatus = Controller::HTTP_OK
+    ): JsonResponse {
+        if ($result instanceof JsonResponse) {
+            return $result;
+        }
+
+        return $this->successResponse(
+            message: $successMessage,
+            code: $code,
+            httpStatus: $httpStatus,
+            data: $result
+        );
+    }
+
 
 }

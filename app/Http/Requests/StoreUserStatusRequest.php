@@ -29,13 +29,6 @@ class StoreUserStatusRequest extends BaseFormRequest
                 'string',
                 'max:255',
             ],
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                'unique:users_status,slug',
-                'regex:/^[a-z0-9_]+$/'
-            ],
             'description' => [
                 'nullable',
                 'string',
@@ -51,13 +44,6 @@ class StoreUserStatusRequest extends BaseFormRequest
             'name.required' => __('validation.user_status.name.required'),
             'name.string'   => __('validation.user_status.name.string'),
             'name.max'      => __('validation.user_status.name.max'),
-
-            // slug
-            'slug.required' => __('validation.user_status.slug.required'),
-            'slug.string'   => __('validation.user_status.slug.string'),
-            'slug.max'      => __('validation.user_status.slug.max'),
-            'slug.unique'   => __('validation.user_status.slug.unique'),
-            'slug.regex'    => __('validation.user_status.slug.regex'),
 
             // description
             'description.string' => __('validation.user_status.description.string'),

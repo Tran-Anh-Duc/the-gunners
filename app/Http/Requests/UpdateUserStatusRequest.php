@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class UpdateActionRequest extends BaseFormRequest
+class UpdateUserStatusRequest extends BaseFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -20,27 +20,39 @@ class UpdateActionRequest extends BaseFormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules()
+    public function rules(): array
     {
-
-        $data = [
-            'key'         => ['required', 'string', 'max:50', 'alpha_dash'],
-            'name'        => ['required', 'string', 'max:100'],
-            'description' => ['required', 'string', 'max:255'],
+        return [
+            'name' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
+            ],
+            'description' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:255',
+            ],
         ];
-        return  $data;
     }
 
-    public function messages()
-    {
 
-        $data =  [
-            'key.required' => __('validation.required', ['attribute' => 'key']),
-            'name.required' => __('validation.required', ['attribute' => 'name']),
-            'description.required' => __('validation.required', ['attribute' => 'description']),
+    public function messages(): array
+    {
+        return [
+            // name
+            'name.required' => __('validation.user_status.name.required'),
+            'name.string'   => __('validation.user_status.name.string'),
+            'name.max'      => __('validation.user_status.name.max'),
+
+            // description
+            'description.string' => __('validation.user_status.description.string'),
+            'description.max'    => __('validation.user_status.description.max'),
         ];
-        return $data;
     }
+
 
 
 }
