@@ -47,7 +47,6 @@ class UserStatusRepository extends BaseRepository
                 $data['slug'] = generate_unique_slug(UserStatus::class,$data['name'],'slug' );
                 return $this->model::query()->create($data);
             });
-
         }catch (\Throwable $e){
             report($e);
             return $this->errorResponse(
