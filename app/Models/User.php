@@ -55,6 +55,11 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'change_password_at' => 'datetime',
+            'is_active' => 'boolean',
+            'department_id' => 'integer',
+            'status_id' => 'integer',
             'password' => 'hashed',
         ];
     }
@@ -99,8 +104,7 @@ class User extends Authenticatable
     public function departments()
     {
        return  $this->belongsToMany(Departments::class,'user_department')
-                 ->withPivot(['assigned_at', 'ended_at', 'is_main', 'position'])
-                 ->withTimestamps();
+                 ->withPivot(['assigned_at', 'ended_at', 'is_main', 'position']);
     }
 
 

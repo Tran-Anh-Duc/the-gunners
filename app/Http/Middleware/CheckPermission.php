@@ -3,20 +3,38 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class CheckPermission
 {
-    // $module, $action passed via route middleware parameters
-    public function handle(Request $request, Closure $next, $module, $action)
+    public function handle(Request $request, Closure $next, string $module, string $action): Response
     {
-        $permissionName = "{$module}_{$action}"; // e.g. edit_user_management
+        $user = $request->user();
 
-        $user = $request->user(); // hoặc auth()->user()
-
-        if (!$user || !$user->hasPermission($permissionName)) {
+        if (! $user) {
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
-        return $next($request);
+        foreach ($this->candidatePermissionNames($module, $action) as $permissionName) {
+            if ($user->hasPermission($permissionName)) {
+                return $next($request);
+            }
+        }
+
+        return response()->json(['error' => 'Forbidden'], 403);
+    }
+
+    protected function candidatePermissionNames(string $module, string $action): array
+    {
+        $normalizedAction = match ($action) {
+            'add' => 'create',
+            'edit' => 'update',
+            default => $action,
+        };
+
+        return array_values(array_unique([
+            "{$module}.{$normalizedAction}",
+            "{$module}_{$action}",
+        ]));
     }
 }

@@ -24,4 +24,15 @@ class UserDepartment extends BaseModel
     ];
 
     public $timestamps = false;
+
+    protected function casts(): array
+    {
+        return [
+            'user_id' => 'integer',
+            'department_id' => 'integer',
+            'is_main' => 'boolean',
+            'assigned_at' => 'datetime',
+            'ended_at' => 'datetime',
+        ];
+    }
 }

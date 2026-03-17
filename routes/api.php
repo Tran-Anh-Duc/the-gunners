@@ -20,20 +20,18 @@ Route::prefix('auth')->group(function () {
 
         // Quản lý user trong auth, vì muốn nó nằm trong auth
         Route::prefix('users')->group(function () {
-//            Route::get('/', [UserController::class, 'index'])->middleware('permission:user_management,view');
-//            Route::get('/{id}', [UserController::class, 'show'])->middleware('permission:user_management,view');
-            Route::post('/', [UserController::class, 'store'])->middleware('permission:user_management,add');
-            Route::put('/{id}', [UserController::class, 'update'])->middleware('permission:user_management,edit');
-            Route::delete('/{id}', [UserController::class, 'destroy'])->middleware('permission:user_management,delete');
+            Route::post('/', [UserController::class, 'store'])->middleware('permission:users,create');
+            Route::put('/{id}', [UserController::class, 'update'])->middleware('permission:users,update');
+            Route::delete('/{id}', [UserController::class, 'destroy'])->middleware('permission:users,delete');
         });
     });
 });
 
 Route::middleware('jwt')->prefix('users')->group(function () {
-    Route::get('/', [UserController::class, 'index']);
-    Route::get('/{id}', [UserController::class, 'show']);
-    Route::post('/create-user-department/{id}', [UserController::class, 'create_user_department']);
-    Route::post('/update-user-department/{id}', [UserController::class, 'update_user_department']);
+    Route::get('/', [UserController::class, 'index'])->middleware('permission:users,view');
+    Route::get('/{id}', [UserController::class, 'show'])->middleware('permission:users,view');
+    Route::post('/create-user-department/{id}', [UserController::class, 'create_user_department'])->middleware('permission:users,update');
+    Route::post('/update-user-department/{id}', [UserController::class, 'update_user_department'])->middleware('permission:users,update');
 
 });
 
@@ -99,4 +97,3 @@ Route::middleware('jwt')->prefix('department')->group(function () {
 
 
 Route::get('/test',[TestController::class,'twoSum']);
-

@@ -1,0 +1,10 @@
+.git
+.idea
+vendor
+node_modules
+npm-debug.log
+storage/logs/*
+storage/framework/cache/data/*
+.env
+.DS_Store
+

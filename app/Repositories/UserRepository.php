@@ -62,6 +62,7 @@ class UserRepository extends BaseRepository
             $fields = [
                 'assigned_at',
                 'is_main',
+                'position',
                 'ended_at',
             ];
 
@@ -72,10 +73,14 @@ class UserRepository extends BaseRepository
                 }
             }
 
+            if (array_key_exists('is_main', $dataUpdate)) {
+                $dataUpdate['is_main'] = filter_var($dataUpdate['is_main'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+            }
+
             /*truong hop chon bo phan lam chinh is_main = 1 => se up tat ca cac bo phan cua user
                 do ve 0 => roi moi update bo phan hien tai lam bo phan chinh
             */
-            if (!empty($dataUpdate['is_main']) && $dataUpdate['is_main'] == 1) {
+            if (!empty($dataUpdate['is_main'])) {
                 UserDepartment::query()
                     ->where('user_id', $dataRecord->user_id)
                     ->where('id', '<>', $id)
@@ -125,9 +130,10 @@ class UserRepository extends BaseRepository
             $dataCreate = [
                 'user_id' => $id,
                 'department_id' => $data['department_id'] ?? '',
-                'is_main' => $data['is_main'] ?? 0,
-                'position' => $data['position'],
-                'assigned_at' => $data['assigned_at'],
+                'is_main' => filter_var($data['is_main'] ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
+                'position' => $data['position'] ?? null,
+                'assigned_at' => $data['assigned_at'] ?? now(),
+                'ended_at' => $data['ended_at'] ?? null,
             ];
             $resultData = UserDepartment::create($dataCreate);
 
