@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Role;
-use App\Models\User;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Repositories\UserRepository;
 use App\Traits\ApiResponse;
 use App\Traits\HasApiPagination;
@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Throwable;
 
 class UserController extends Controller
 {
@@ -62,6 +61,69 @@ class UserController extends Controller
             code: 'user_info_success',
             httpStatus: Controller::HTTP_OK,
             data: $dataTranById,
+        );
+    }
+
+    public function store(StoreUserRequest $request): JsonResponse
+    {
+        $resultData = $this->userRepository->createUser($request->validated());
+
+        if (($resultData['status'] ?? 422) !== 200) {
+            return $this->errorResponse(
+                __('messages.create_failed'),
+                'create_failed',
+                ($resultData['status'] ?? 422) === 404 ? Controller::HTTP_NOT_FOUND : Controller::HTTP_UNPROCESSABLE_ENTITY,
+                '',
+            );
+        }
+
+        return $this->successResponse(
+            __('messages.create_success'),
+            'create_success',
+            Controller::HTTP_OK,
+            $resultData['data'],
+        );
+    }
+
+    public function update(UpdateUserRequest $request, int $id): JsonResponse
+    {
+        $resultData = $this->userRepository->updateUser($request->validated(), $id);
+
+        if (($resultData['status'] ?? 422) !== 200) {
+            return $this->errorResponse(
+                ($resultData['status'] ?? 422) === 404 ? __('messages.record_not_found') : __('messages.update_failed'),
+                ($resultData['status'] ?? 422) === 404 ? 'record_not_found' : 'update_failed',
+                ($resultData['status'] ?? 422) === 404 ? Controller::HTTP_NOT_FOUND : Controller::HTTP_UNPROCESSABLE_ENTITY,
+                '',
+            );
+        }
+
+        return $this->successResponse(
+            __('messages.update_success'),
+            'update_success',
+            Controller::HTTP_OK,
+            $resultData['data'],
+        );
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $resultData = $this->userRepository->destroyUser($id);
+
+        if (($resultData['status'] ?? 422) !== 200) {
+            return $this->errorResponse(
+                ($resultData['status'] ?? 422) === 404 ? __('messages.record_not_found') : __('messages.delete_failed'),
+                ($resultData['status'] ?? 422) === 404 ? 'record_not_found' : 'delete_failed',
+                ($resultData['status'] ?? 422) === 404 ? Controller::HTTP_NOT_FOUND : Controller::HTTP_UNPROCESSABLE_ENTITY,
+                '',
+            );
+        }
+
+        return $this->successResponse(
+            __('messages.delete_success'),
+            'delete_success',
+            Controller::HTTP_OK,
+            $resultData['data'],
         );
     }
 

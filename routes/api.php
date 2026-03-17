@@ -49,19 +49,19 @@ Route::middleware('jwt')->prefix('actions')->group(function () {
 
 // Route riêng cho role, nằm ngoài auth, nhưng vẫn cần token (jwt)
 Route::middleware('jwt')->prefix('role')->group(function () {
-    Route::get('/', [RoleController::class, 'index'])->name('role.index');
-    Route::post('/', [RoleController::class, 'store'])->name('role.store');
-    Route::get('/{id}', [RoleController::class, 'show'])->name('role.show');
-    Route::put('/{id}', [RoleController::class, 'updateRole'])->name('role.updateRole');
-    Route::delete('/{id}', [RoleController::class, 'destroy'])->name('role.destroy');
-    Route::put('/restore/{id}', [RoleController::class, 'restore'])->name('role.restore');
+    Route::get('/', [RoleController::class, 'index'])->middleware('permission:roles,view')->name('role.index');
+    Route::post('/', [RoleController::class, 'store'])->middleware('permission:roles,create')->name('role.store');
+    Route::get('/{id}', [RoleController::class, 'show'])->middleware('permission:roles,view')->name('role.show');
+    Route::put('/{id}', [RoleController::class, 'updateRole'])->middleware('permission:roles,update')->name('role.updateRole');
+    Route::delete('/{id}', [RoleController::class, 'destroy'])->middleware('permission:roles,delete')->name('role.destroy');
+    Route::put('/restore/{id}', [RoleController::class, 'restore'])->middleware('permission:roles,update')->name('role.restore');
 
     //update roles users.
-    Route::post('/update-role-user', [RoleController::class, 'updateRoleUser'])->name('role.update_role_user');
+    Route::post('/update-role-user', [RoleController::class, 'updateRoleUser'])->middleware('permission:roles,update')->name('role.update_role_user');
     //update permissions users
-    Route::post('/update-permission-user', [RoleController::class, 'updatePermissionUser'])->name('role.permission_user');
+    Route::post('/update-permission-user', [RoleController::class, 'updatePermissionUser'])->middleware('permission:roles,update')->name('role.permission_user');
     //update  permissions roles
-    Route::post('/update-permission-role', [RoleController::class, 'updatePermissionRole'])->name('role.permission_role');
+    Route::post('/update-permission-role', [RoleController::class, 'updatePermissionRole'])->middleware('permission:roles,update')->name('role.permission_role');
 });
 
 // Route riêng cho module, nằm ngoài auth, nhưng vẫn cần token (jwt)
@@ -87,12 +87,12 @@ Route::middleware('jwt')->prefix('user-status')->group(function () {
 
 // Route riêng cho Department, nằm ngoài auth, nhưng vẫn cần token (jwt)
 Route::middleware('jwt')->prefix('department')->group(function () {
-    Route::get('/', [DepartmentController::class, 'index'])->name('department.index');
-    Route::post('/', [DepartmentController::class, 'store'])->name('department.store');
-    Route::get('/{id}', [DepartmentController::class, 'show'])->name('department.show');
-    Route::put('/{id}', [DepartmentController::class, 'update'])->name('department.update');
-    Route::delete('/{id}', [DepartmentController::class, 'destroy'])->name('department.destroy');
-    Route::put('/restore/{id}', [DepartmentController::class, 'restore'])->name('department.restore');
+    Route::get('/', [DepartmentController::class, 'index'])->middleware('permission:departments,view')->name('department.index');
+    Route::post('/', [DepartmentController::class, 'store'])->middleware('permission:departments,create')->name('department.store');
+    Route::get('/{id}', [DepartmentController::class, 'show'])->middleware('permission:departments,view')->name('department.show');
+    Route::put('/{id}', [DepartmentController::class, 'update'])->middleware('permission:departments,update')->name('department.update');
+    Route::delete('/{id}', [DepartmentController::class, 'destroy'])->middleware('permission:departments,update')->name('department.destroy');
+    Route::put('/restore/{id}', [DepartmentController::class, 'restore'])->middleware('permission:departments,update')->name('department.restore');
 });
 
 

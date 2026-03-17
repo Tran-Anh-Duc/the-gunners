@@ -5,7 +5,6 @@ namespace App\Repositories;
 
 use App\Helpers\JwtHelper;
 use App\Http\Controllers\Controller;
-use App\Models\Action;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserDepartment;
@@ -13,12 +12,11 @@ use App\Repositories\BaseRepository;
 use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Throwable;
-use function Illuminate\Cache\table;
-use function Termwind\ValueObjects\pr;
 
 
 class UserRepository extends BaseRepository
@@ -155,8 +153,10 @@ class UserRepository extends BaseRepository
     {
         try {
             return  DB::transaction(function () use ($data) {
-                $data['password'] = Hash::make($data['password']);
-                $result = User::query()->create($data);
+                $userData = $this->extractUserAttributes($data);
+                $userData['password'] = Hash::make($userData['password']);
+
+                $result = User::query()->create($userData);
                 $token = JwtHelper::generateToken($result);
                 return [
                     'access_token' => $token,
@@ -183,7 +183,11 @@ class UserRepository extends BaseRepository
         $user = $queryUser->where('email', $email)->first();
 
 
-        if (empty($user) || !Hash::check($password,$user->password) ){
+        if (
+            empty($user)
+            || !Hash::check($password, $user->password)
+            || ! $user->is_active
+        ) {
             throw ValidationException::withMessages([
                 'email' => __('messages.user.user_login_failed'),
             ]);
@@ -248,6 +252,158 @@ class UserRepository extends BaseRepository
                 data: ''
             );
         }
+    }
+
+    public function createUser(array $data): array
+    {
+        try {
+            return DB::transaction(function () use ($data) {
+                $userData = $this->extractUserAttributes($data, true);
+                $userData['password'] = Hash::make($userData['password']);
+                $userData['is_active'] = $userData['is_active'] ?? true;
+
+                $user = User::query()->create($userData);
+                $this->syncUserRoles($user, $data);
+
+                return [
+                    'status' => 200,
+                    'data' => $this->loadUserRelations($user),
+                ];
+            });
+        } catch (Throwable $e) {
+            return [
+                'status' => 422,
+            ];
+        }
+    }
+
+    public function updateUser(array $data, int $id): array
+    {
+        try {
+            return DB::transaction(function () use ($data, $id) {
+                $user = User::query()->find($id);
+
+                if (! $user) {
+                    return [
+                        'status' => 404,
+                    ];
+                }
+
+                $userData = $this->extractUserAttributes($data, true);
+
+                if (array_key_exists('password', $userData)) {
+                    $userData['password'] = Hash::make($userData['password']);
+                }
+
+                if ($userData !== []) {
+                    $user->update($userData);
+                }
+
+                $this->syncUserRoles($user, $data);
+
+                return [
+                    'status' => 200,
+                    'data' => $this->loadUserRelations($user),
+                ];
+            });
+        } catch (Throwable $e) {
+            return [
+                'status' => 422,
+            ];
+        }
+    }
+
+    public function destroyUser(int $id): array
+    {
+        try {
+            return DB::transaction(function () use ($id) {
+                $user = User::query()->find($id);
+
+                if (! $user) {
+                    return [
+                        'status' => 404,
+                    ];
+                }
+
+                $user->roles()->detach();
+                $user->permissions()->detach();
+                $user->delete();
+
+                return [
+                    'status' => 200,
+                    'data' => $user,
+                ];
+            });
+        } catch (Throwable $e) {
+            return [
+                'status' => 422,
+            ];
+        }
+    }
+
+    protected function extractUserAttributes(array $data, bool $allowManagementFields = false): array
+    {
+        $fields = [
+            'name',
+            'email',
+            'password',
+        ];
+
+        if ($allowManagementFields) {
+            $fields = array_merge($fields, [
+                'phone',
+                'avatar',
+                'role',
+                'is_active',
+                'department_id',
+                'status_id',
+                'change_password_at',
+            ]);
+        }
+
+        $userData = Arr::only($data, $fields);
+
+        if (array_key_exists('password', $userData) && blank($userData['password'])) {
+            unset($userData['password']);
+        }
+
+        return $userData;
+    }
+
+    protected function syncUserRoles(User $user, array $data): void
+    {
+        $resolvedRoleIds = [];
+
+        if (! empty($data['role_ids']) && is_array($data['role_ids'])) {
+            $resolvedRoleIds = Role::query()
+                ->whereIn('id', $data['role_ids'])
+                ->pluck('id')
+                ->all();
+        } elseif (! empty($data['role'])) {
+            $resolvedRoleIds = Role::query()
+                ->where('name', $data['role'])
+                ->pluck('id')
+                ->all();
+        }
+
+        if ($resolvedRoleIds === []) {
+            return;
+        }
+
+        $user->roles()->sync($resolvedRoleIds);
+
+        $primaryRoleName = Role::query()
+            ->where('id', $resolvedRoleIds[0])
+            ->value('name');
+
+        if ($primaryRoleName !== null && $user->role !== $primaryRoleName) {
+            $user->forceFill(['role' => $primaryRoleName])->save();
+        }
+    }
+
+    protected function loadUserRelations(User $user): User
+    {
+        return $user->fresh(['department:id,name', 'status:id,name', 'roles:id,name']) ?? $user;
     }
 
 

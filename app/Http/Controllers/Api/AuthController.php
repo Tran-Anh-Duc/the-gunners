@@ -4,16 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginUserRequest;
-use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\RegisterUserRequest;
 use App\Repositories\UserRepository;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use App\Helpers\JwtHelper;
 use Illuminate\Support\Facades\Cache;
-use function Symfony\Component\HttpKernel\preBoot;
 
 class AuthController extends Controller
 {
@@ -24,9 +20,10 @@ class AuthController extends Controller
         $this->userRepository = $userRepository;
     }
 
-    public function register(StoreUserRequest $request)
+    public function register(RegisterUserRequest $request)
     {
-        $data = $request->all();
+        $data = $request->validated();
+
         $resultData = $this->userRepository->registerAuth($data);
         return $this->successResponse(
             message: __('messages.register.action_created_success'),

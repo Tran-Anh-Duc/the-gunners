@@ -116,6 +116,58 @@ Ban van can rebuild neu thay doi:
 - dependency Node
 - bat ky thu gi duoc bake san vao image
 
+## Cach chay test
+
+Chay toan bo test:
+
+```bash
+docker compose exec app php artisan test
+```
+
+Chay rieng 1 file test:
+
+```bash
+docker compose exec app php artisan test tests/Feature/ManagementRoutePermissionTest.php
+```
+
+Chay theo ten class hoac ten test:
+
+```bash
+docker compose exec app php artisan test --filter=AuthRegisterValidationTest
+```
+
+Neu ban dang dung che do Aiven va van muon chay test trong container:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.aiven.yml exec app php artisan test
+```
+
+## Cach them test case moi
+
+Tao test feature moi:
+
+```bash
+docker compose exec app php artisan make:test UserManagementTest
+```
+
+Tao test unit moi:
+
+```bash
+docker compose exec app php artisan make:test UserHelperTest --unit
+```
+
+Sau khi tao:
+
+- Test feature nam trong `tests/Feature`
+- Test unit nam trong `tests/Unit`
+- Them case moi vao file vua tao
+- Chay lai `php artisan test` de kiem tra
+
+Quy uoc de de doc:
+
+- Test API, route, permission, auth: dat trong `tests/Feature`
+- Test ham xu ly nho, helper, logic don le: dat trong `tests/Unit`
+
 ## Luu y
 
 - `phpMyAdmin` luon tro toi container `db` local, khong tro toi Aiven.

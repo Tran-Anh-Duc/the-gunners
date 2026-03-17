@@ -3,8 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends BaseFormRequest
 {
@@ -40,7 +39,44 @@ class StoreUserRequest extends BaseFormRequest
                 'string',
                 'min:8',
                 //'confirmed', // cần password_confirmation
-            ]
+            ],
+            'phone' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
+            'avatar' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'role' => [
+                'nullable',
+                'string',
+                Rule::exists('roles', 'name'),
+            ],
+            'role_ids' => [
+                'nullable',
+                'array',
+            ],
+            'role_ids.*' => [
+                'integer',
+                Rule::exists('roles', 'id'),
+            ],
+            'is_active' => [
+                'nullable',
+                'boolean',
+            ],
+            'department_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('departments', 'id'),
+            ],
+            'status_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users_status', 'id'),
+            ],
         ];
     }
 
