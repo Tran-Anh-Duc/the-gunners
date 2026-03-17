@@ -2,27 +2,14 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
-class StoreUserRequest extends BaseFormRequest
+class StoreUserRequest extends BaseBusinessRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array|string>
-     */
     public function rules(): array
     {
         return [
+            'business_id' => $this->businessRules(),
             'name' => [
                 'required',
                 'string',
@@ -38,7 +25,6 @@ class StoreUserRequest extends BaseFormRequest
                 'required',
                 'string',
                 'min:8',
-                //'confirmed', // cần password_confirmation
             ],
             'phone' => [
                 'nullable',
@@ -53,48 +39,21 @@ class StoreUserRequest extends BaseFormRequest
             'role' => [
                 'nullable',
                 'string',
-                Rule::exists('roles', 'name'),
+                Rule::in(['owner', 'manager', 'staff']),
             ],
-            'role_ids' => [
+            'membership_status' => [
                 'nullable',
-                'array',
+                'string',
+                Rule::in(['active', 'invited', 'inactive']),
             ],
-            'role_ids.*' => [
-                'integer',
-                Rule::exists('roles', 'id'),
+            'is_owner' => [
+                'nullable',
+                'boolean',
             ],
             'is_active' => [
                 'nullable',
                 'boolean',
             ],
-            'department_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('departments', 'id'),
-            ],
-            'status_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('users_status', 'id'),
-            ],
         ];
     }
-
-    public function messages(): array
-    {
-        return [
-            'name.required' => __('validation.user.name.required'),
-            'name.max' => __('validation.user.name.max'),
-
-            'email.required' => __('validation.user.email.required'),
-            'email.email' => __('validation.user.email.email'),
-            'email.unique' => __('validation.user.email.unique'),
-
-            'password.required' => __('validation.user.password.required'),
-            'password.min' => __('validation.user.password.min'),
-            'password.confirmed' => __('validation.user.password.confirmed'),
-        ];
-    }
-
-
 }

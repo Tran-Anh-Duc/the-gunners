@@ -1,15 +1,20 @@
 <?php
+
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\InventoryController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\StockInController;
+use App\Http\Controllers\Api\StockAdjustmentController;
+use App\Http\Controllers\Api\StockOutController;
+use App\Http\Controllers\Api\SupplierController;
+use App\Http\Controllers\Api\UnitController;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\ActionController;
-use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Api\ModuleController;
-use App\Http\Controllers\Api\UserStatusController;
-use App\Http\Controllers\Api\DepartmentController;
+use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\TestController;
 
-
-// Các route auth (login, register, logout, me)
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
@@ -18,7 +23,6 @@ Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
 
-        // Quản lý user trong auth, vì muốn nó nằm trong auth
         Route::prefix('users')->group(function () {
             Route::post('/', [UserController::class, 'store'])->middleware('permission:users,create');
             Route::put('/{id}', [UserController::class, 'update'])->middleware('permission:users,update');
@@ -30,70 +34,95 @@ Route::prefix('auth')->group(function () {
 Route::middleware('jwt')->prefix('users')->group(function () {
     Route::get('/', [UserController::class, 'index'])->middleware('permission:users,view');
     Route::get('/{id}', [UserController::class, 'show'])->middleware('permission:users,view');
-    Route::post('/create-user-department/{id}', [UserController::class, 'create_user_department'])->middleware('permission:users,update');
-    Route::post('/update-user-department/{id}', [UserController::class, 'update_user_department'])->middleware('permission:users,update');
-
 });
 
-
-// Route riêng cho actions, nằm ngoài auth, nhưng vẫn cần token (jwt)
-Route::middleware('jwt')->prefix('actions')->group(function () {
-    Route::get('/', [ActionController::class, 'index'])->name('actions.index');
-    Route::post('/', [ActionController::class, 'store'])->name('actions.store');
-    Route::get('/{id}', [ActionController::class, 'show'])->name('actions.show');
-    Route::put('/{id}', [ActionController::class, 'update'])->name('actions.update');
-    Route::delete('/{id}', [ActionController::class, 'destroy'])->name('actions.destroy');
-    Route::put('/restore/{id}', [ActionController::class, 'restore'])->name('actions.restore');
+Route::middleware('jwt')->prefix('units')->group(function () {
+    Route::get('/', [UnitController::class, 'index'])->middleware('permission:inventory,view');
+    Route::post('/', [UnitController::class, 'store'])->middleware('permission:inventory,create');
+    Route::get('/{id}', [UnitController::class, 'show'])->middleware('permission:inventory,view');
+    Route::put('/{id}', [UnitController::class, 'update'])->middleware('permission:inventory,update');
+    Route::delete('/{id}', [UnitController::class, 'destroy'])->middleware('permission:inventory,delete');
 });
 
-
-// Route riêng cho role, nằm ngoài auth, nhưng vẫn cần token (jwt)
-Route::middleware('jwt')->prefix('role')->group(function () {
-    Route::get('/', [RoleController::class, 'index'])->middleware('permission:roles,view')->name('role.index');
-    Route::post('/', [RoleController::class, 'store'])->middleware('permission:roles,create')->name('role.store');
-    Route::get('/{id}', [RoleController::class, 'show'])->middleware('permission:roles,view')->name('role.show');
-    Route::put('/{id}', [RoleController::class, 'updateRole'])->middleware('permission:roles,update')->name('role.updateRole');
-    Route::delete('/{id}', [RoleController::class, 'destroy'])->middleware('permission:roles,delete')->name('role.destroy');
-    Route::put('/restore/{id}', [RoleController::class, 'restore'])->middleware('permission:roles,update')->name('role.restore');
-
-    //update roles users.
-    Route::post('/update-role-user', [RoleController::class, 'updateRoleUser'])->middleware('permission:roles,update')->name('role.update_role_user');
-    //update permissions users
-    Route::post('/update-permission-user', [RoleController::class, 'updatePermissionUser'])->middleware('permission:roles,update')->name('role.permission_user');
-    //update  permissions roles
-    Route::post('/update-permission-role', [RoleController::class, 'updatePermissionRole'])->middleware('permission:roles,update')->name('role.permission_role');
+Route::middleware('jwt')->prefix('warehouses')->group(function () {
+    Route::get('/', [WarehouseController::class, 'index'])->middleware('permission:inventory,view');
+    Route::post('/', [WarehouseController::class, 'store'])->middleware('permission:inventory,create');
+    Route::get('/{id}', [WarehouseController::class, 'show'])->middleware('permission:inventory,view');
+    Route::put('/{id}', [WarehouseController::class, 'update'])->middleware('permission:inventory,update');
+    Route::delete('/{id}', [WarehouseController::class, 'destroy'])->middleware('permission:inventory,delete');
 });
 
-// Route riêng cho module, nằm ngoài auth, nhưng vẫn cần token (jwt)
-Route::middleware('jwt')->prefix('module')->group(function () {
-    Route::get('/', [ModuleController::class, 'index'])->name('module.index');
-    Route::post('/', [ModuleController::class, 'store'])->name('module.store');
-    Route::get('/{id}', [ModuleController::class, 'show'])->name('module.show');
-    Route::put('/{id}', [ModuleController::class, 'update'])->name('module.update');
-    Route::delete('/{id}', [ModuleController::class, 'destroy'])->name('module.destroy');
-    Route::put('/restore/{id}', [ModuleController::class, 'restore'])->name('module.restore');
+Route::middleware('jwt')->prefix('products')->group(function () {
+    Route::get('/', [ProductController::class, 'index'])->middleware('permission:products,view');
+    Route::post('/', [ProductController::class, 'store'])->middleware('permission:products,create');
+    Route::get('/{id}', [ProductController::class, 'show'])->middleware('permission:products,view');
+    Route::put('/{id}', [ProductController::class, 'update'])->middleware('permission:products,update');
+    Route::delete('/{id}', [ProductController::class, 'destroy'])->middleware('permission:products,delete');
 });
 
-
-// Route riêng cho user_status, nằm ngoài auth, nhưng vẫn cần token (jwt)
-Route::middleware('jwt')->prefix('user-status')->group(function () {
-    Route::get('/', [UserStatusController::class, 'index'])->name('user-status.index');
-    Route::post('/', [UserStatusController::class, 'store'])->name('user-status.store');
-    Route::get('/{id}', [UserStatusController::class, 'show'])->name('user-status.show');
-    Route::put('/{id}', [UserStatusController::class, 'update'])->name('user-status.update');
-    Route::delete('/{id}', [UserStatusController::class, 'destroy'])->name('user-status.destroy');
-    Route::put('/restore/{id}', [UserStatusController::class, 'restore'])->name('user-status.restore');
+Route::middleware('jwt')->prefix('customers')->group(function () {
+    Route::get('/', [CustomerController::class, 'index'])->middleware('permission:customers,view');
+    Route::post('/', [CustomerController::class, 'store'])->middleware('permission:customers,create');
+    Route::get('/{id}', [CustomerController::class, 'show'])->middleware('permission:customers,view');
+    Route::put('/{id}', [CustomerController::class, 'update'])->middleware('permission:customers,update');
+    Route::delete('/{id}', [CustomerController::class, 'destroy'])->middleware('permission:customers,delete');
 });
 
-// Route riêng cho Department, nằm ngoài auth, nhưng vẫn cần token (jwt)
-Route::middleware('jwt')->prefix('department')->group(function () {
-    Route::get('/', [DepartmentController::class, 'index'])->middleware('permission:departments,view')->name('department.index');
-    Route::post('/', [DepartmentController::class, 'store'])->middleware('permission:departments,create')->name('department.store');
-    Route::get('/{id}', [DepartmentController::class, 'show'])->middleware('permission:departments,view')->name('department.show');
-    Route::put('/{id}', [DepartmentController::class, 'update'])->middleware('permission:departments,update')->name('department.update');
-    Route::delete('/{id}', [DepartmentController::class, 'destroy'])->middleware('permission:departments,update')->name('department.destroy');
-    Route::put('/restore/{id}', [DepartmentController::class, 'restore'])->middleware('permission:departments,update')->name('department.restore');
+Route::middleware('jwt')->prefix('suppliers')->group(function () {
+    Route::get('/', [SupplierController::class, 'index'])->middleware('permission:suppliers,view');
+    Route::post('/', [SupplierController::class, 'store'])->middleware('permission:suppliers,create');
+    Route::get('/{id}', [SupplierController::class, 'show'])->middleware('permission:suppliers,view');
+    Route::put('/{id}', [SupplierController::class, 'update'])->middleware('permission:suppliers,update');
+    Route::delete('/{id}', [SupplierController::class, 'destroy'])->middleware('permission:suppliers,delete');
 });
 
+Route::middleware('jwt')->prefix('orders')->group(function () {
+    Route::get('/', [OrderController::class, 'index'])->middleware('permission:orders,view');
+    Route::post('/', [OrderController::class, 'store'])->middleware('permission:orders,create');
+    Route::get('/{id}', [OrderController::class, 'show'])->middleware('permission:orders,view');
+    Route::put('/{id}', [OrderController::class, 'update'])->middleware('permission:orders,update');
+    Route::post('/{id}/confirm', [OrderController::class, 'confirm'])->middleware('permission:orders,update');
+    Route::post('/{id}/cancel', [OrderController::class, 'cancel'])->middleware('permission:orders,update');
+});
 
-Route::get('/test',[TestController::class,'twoSum']);
+Route::middleware('jwt')->prefix('stock-in')->group(function () {
+    Route::get('/', [StockInController::class, 'index'])->middleware('permission:inventory,view');
+    Route::post('/', [StockInController::class, 'store'])->middleware('permission:inventory,create');
+    Route::get('/{id}', [StockInController::class, 'show'])->middleware('permission:inventory,view');
+    Route::put('/{id}', [StockInController::class, 'update'])->middleware('permission:inventory,update');
+    Route::post('/{id}/confirm', [StockInController::class, 'confirm'])->middleware('permission:inventory,update');
+    Route::post('/{id}/cancel', [StockInController::class, 'cancel'])->middleware('permission:inventory,update');
+});
+
+Route::middleware('jwt')->prefix('stock-out')->group(function () {
+    Route::get('/', [StockOutController::class, 'index'])->middleware('permission:inventory,view');
+    Route::post('/', [StockOutController::class, 'store'])->middleware('permission:inventory,create');
+    Route::get('/{id}', [StockOutController::class, 'show'])->middleware('permission:inventory,view');
+    Route::put('/{id}', [StockOutController::class, 'update'])->middleware('permission:inventory,update');
+    Route::post('/{id}/confirm', [StockOutController::class, 'confirm'])->middleware('permission:inventory,update');
+    Route::post('/{id}/cancel', [StockOutController::class, 'cancel'])->middleware('permission:inventory,update');
+});
+
+Route::middleware('jwt')->prefix('stock-adjustments')->group(function () {
+    Route::get('/', [StockAdjustmentController::class, 'index'])->middleware('permission:inventory,view');
+    Route::post('/', [StockAdjustmentController::class, 'store'])->middleware('permission:inventory,create');
+    Route::get('/{id}', [StockAdjustmentController::class, 'show'])->middleware('permission:inventory,view');
+    Route::put('/{id}', [StockAdjustmentController::class, 'update'])->middleware('permission:inventory,update');
+    Route::post('/{id}/confirm', [StockAdjustmentController::class, 'confirm'])->middleware('permission:inventory,update');
+    Route::post('/{id}/cancel', [StockAdjustmentController::class, 'cancel'])->middleware('permission:inventory,update');
+});
+
+Route::middleware('jwt')->prefix('payments')->group(function () {
+    Route::get('/', [PaymentController::class, 'index'])->middleware('permission:payments,view');
+    Route::post('/', [PaymentController::class, 'store'])->middleware('permission:payments,create');
+    Route::get('/{id}', [PaymentController::class, 'show'])->middleware('permission:payments,view');
+    Route::put('/{id}', [PaymentController::class, 'update'])->middleware('permission:payments,update');
+    Route::post('/{id}/confirm', [PaymentController::class, 'confirm'])->middleware('permission:payments,update');
+    Route::post('/{id}/cancel', [PaymentController::class, 'cancel'])->middleware('permission:payments,update');
+});
+
+Route::middleware('jwt')->prefix('inventory')->group(function () {
+    Route::get('/stocks', [InventoryController::class, 'index'])->middleware('permission:inventory,view');
+});
+
+Route::get('/test', [TestController::class, 'twoSum']);

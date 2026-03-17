@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -16,96 +16,125 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'phone',
         'avatar',
-        'role',
         'is_active',
         'last_login_at',
-        'change_password_at',
-        'department_id',
-        'status_id'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
-        'password','remember_token'
+        'password',
+        'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
-            'change_password_at' => 'datetime',
             'is_active' => 'boolean',
-            'department_id' => 'integer',
-            'status_id' => 'integer',
             'password' => 'hashed',
         ];
     }
 
-
-    public function roles(): BelongsToMany
+    public function businesses(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class);
+        return $this->belongsToMany(Business::class, 'business_users')
+            ->withPivot(['role', 'status', 'is_owner', 'joined_at'])
+            ->withTimestamps();
     }
 
-    public function permissions(): BelongsToMany
+    public function businessMemberships(): HasMany
     {
-        return $this->belongsToMany(Permission::class);
+        return $this->hasMany(BusinessUser::class);
     }
 
-    public function hasPermission($permissionName): bool
+    public function activeBusinessMemberships(): HasMany
     {
-        return $this->permissions()->where('name', $permissionName)->exists()
-            || $this->roles()->whereHas('permissions', function ($q) use ($permissionName) {
-                $q->where('name', $permissionName);
-            })->exists();
+        return $this->businessMemberships()->where('status', 'active');
     }
 
-    public function hasRole($roleName): bool
+    public function hasRole(string $roleName, ?int $businessId = null): bool
     {
-        return $this->roles()->where('name', $roleName)->exists();
+        return $this->scopedMembershipQuery($businessId)
+            ->where('role', $roleName)
+            ->exists();
     }
 
-    /*quan hẹ 1-n*/
-    public function department(): BelongsTo
+    public function hasPermission(string $permissionName, ?int $businessId = null): bool
     {
-        return $this->belongsTo(Departments::class, 'department_id', 'id');
+        $membership = $this->scopedMembershipQuery($businessId)->first();
+
+        if (! $membership) {
+            return false;
+        }
+
+        if ($membership->is_owner) {
+            return true;
+        }
+
+        $permissionMap = [
+            'manager' => [
+                'users.view',
+                'users.create',
+                'users.update',
+                'products.view',
+                'products.create',
+                'products.update',
+                'products.delete',
+                'inventory.view',
+                'inventory.create',
+                'inventory.update',
+                'inventory.delete',
+                'orders.view',
+                'orders.create',
+                'orders.update',
+                'customers.view',
+                'customers.create',
+                'customers.update',
+                'customers.delete',
+                'suppliers.view',
+                'suppliers.create',
+                'suppliers.update',
+                'suppliers.delete',
+                'payments.view',
+                'payments.create',
+                'payments.update',
+            ],
+            'staff' => [
+                'products.view',
+                'products.create',
+                'products.update',
+                'inventory.view',
+                'inventory.create',
+                'orders.view',
+                'orders.create',
+                'orders.update',
+                'customers.view',
+                'customers.create',
+                'customers.update',
+                'suppliers.view',
+                'payments.view',
+                'payments.create',
+            ],
+        ];
+
+        return in_array($permissionName, $permissionMap[$membership->role] ?? [], true);
     }
 
-    /*quan he 1-1*/
-    public function status(): BelongsTo
+    protected function scopedMembershipQuery(?int $businessId = null)
     {
-        return $this->belongsTo(UserStatus::class, 'status_id', 'id');
+        $query = $this->activeBusinessMemberships();
+
+        if ($businessId !== null) {
+            return $query->where('business_id', $businessId);
+        }
+
+        return $query->orderByDesc('is_owner')->orderBy('id');
     }
-
-    //quan he 1-n Users and  Departments
-    public function departments()
-    {
-       return  $this->belongsToMany(Departments::class,'user_department')
-                 ->withPivot(['assigned_at', 'ended_at', 'is_main', 'position']);
-    }
-
-
 }

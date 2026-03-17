@@ -5,17 +5,37 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-//use Illuminate\Database\Eloquent\SoftDeletes;
-
 /**
  * @mixin IdeHelperOrderItem
  */
 class OrderItem extends Model
 {
-    //use SoftDeletes;
-    protected $table = "order_items";
+    protected $fillable = [
+        'business_id',
+        'order_id',
+        'product_id',
+        'product_sku',
+        'product_name',
+        'quantity',
+        'unit_price',
+        'discount_amount',
+        'line_total',
+    ];
 
-    protected $fillable = ['order_id', 'product_id', 'quantity','price','subtotal','created_at','updated_at'];
+    protected function casts(): array
+    {
+        return [
+            'quantity' => 'decimal:3',
+            'unit_price' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
+            'line_total' => 'decimal:2',
+        ];
+    }
+
+    public function business(): BelongsTo
+    {
+        return $this->belongsTo(Business::class);
+    }
 
     public function order(): BelongsTo
     {

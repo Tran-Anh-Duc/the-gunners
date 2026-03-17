@@ -3,19 +3,38 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-//use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @mixin IdeHelperUnit
  */
 class Unit extends Model
 {
-    //use SoftDeletes;
-    protected $table = "units";
+    use SoftDeletes;
 
-    protected $fillable = ['name', 'code','created_at','updated_at'];
+    protected $fillable = [
+        'business_id',
+        'code',
+        'name',
+        'description',
+        'is_active',
+    ];
 
-    public function products()
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
+
+    public function business(): BelongsTo
+    {
+        return $this->belongsTo(Business::class);
+    }
+
+    public function products(): HasMany
     {
         return $this->hasMany(Product::class);
     }

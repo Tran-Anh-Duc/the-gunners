@@ -172,4 +172,5 @@ Quy uoc de de doc:
 
 - `phpMyAdmin` luon tro toi container `db` local, khong tro toi Aiven.
 - Frontend assets dang duoc build san trong image. Neu sua frontend lon, hay rebuild hoac build lai trong container.
-- Baseline database hien nam o `database/schema/mysql-schema.sql`.
+- Schema MVP moi hien duoc quan ly bang `database/migrations`.
+- Khi schema da on dinh va ban muon chot baseline moi, co the dung `php artisan schema:dump --prune`.

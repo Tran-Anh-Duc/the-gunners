@@ -3,27 +3,61 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-
-//use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @mixin IdeHelperWarehouse
  */
 class Warehouse extends Model
 {
-    //use SoftDeletes;
-    protected $table = "warehouses";
+    use SoftDeletes;
 
-    protected $fillable = ['name', 'address', 'status_id','created_at','updated_at'];
+    protected $fillable = [
+        'business_id',
+        'code',
+        'name',
+        'address',
+        'status',
+    ];
 
-    public function users(): BelongsToMany
+    public function business(): BelongsTo
     {
-        return $this->belongsToMany(User::class, 'warehouse_user')
-            ->withPivot('role_id');
+        return $this->belongsTo(Business::class);
     }
 
-    public function inventories()
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function stockIns(): HasMany
+    {
+        return $this->hasMany(StockIn::class);
+    }
+
+    public function stockOuts(): HasMany
+    {
+        return $this->hasMany(StockOut::class);
+    }
+
+    public function stockAdjustments(): HasMany
+    {
+        return $this->hasMany(StockAdjustment::class);
+    }
+
+    public function inventoryMovements(): HasMany
+    {
+        return $this->hasMany(InventoryMovement::class);
+    }
+
+    public function currentStocks(): HasMany
+    {
+        return $this->hasMany(CurrentStock::class);
+    }
+
+    public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class);
     }

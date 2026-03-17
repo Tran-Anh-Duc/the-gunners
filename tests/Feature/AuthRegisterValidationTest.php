@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Requests\RegisterUserRequest;
-use App\Repositories\UserRepository;
+use App\Services\AuthService;
 use Mockery;
 use Tests\TestCase;
 
@@ -19,8 +19,8 @@ class AuthRegisterValidationTest extends TestCase
 
     public function test_register_only_passes_public_fields_to_the_repository(): void
     {
-        $repository = Mockery::mock(UserRepository::class);
-        $repository->shouldReceive('registerAuth')
+        $service = Mockery::mock(AuthService::class);
+        $service->shouldReceive('register')
             ->once()
             ->with([
                 'name' => 'Demo User',
@@ -42,7 +42,7 @@ class AuthRegisterValidationTest extends TestCase
                 'password' => 'secret123',
             ]);
 
-        $controller = new AuthController($repository);
+        $controller = new AuthController($service);
         $response = $controller->register($request);
 
         $this->assertSame(200, $response->getStatusCode());

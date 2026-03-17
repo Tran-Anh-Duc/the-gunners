@@ -1,0 +1,59 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('orders', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
+            $table->foreignId('warehouse_id')->constrained('warehouses')->restrictOnDelete();
+            $table->foreignId('customer_id')->nullable()->constrained('customers')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('order_no', 50);
+            $table->dateTime('order_date');
+            $table->string('status', 30)->default('draft');
+            $table->string('payment_status', 30)->default('unpaid');
+            $table->decimal('subtotal', 18, 2)->default(0);
+            $table->decimal('discount_amount', 18, 2)->default(0);
+            $table->decimal('shipping_amount', 18, 2)->default(0);
+            $table->decimal('total_amount', 18, 2)->default(0);
+            $table->decimal('paid_amount', 18, 2)->default(0);
+            $table->text('note')->nullable();
+            $table->timestamps();
+
+            $table->unique(['business_id', 'order_no']);
+            $table->index(['business_id', 'order_date']);
+            $table->index(['business_id', 'status']);
+            $table->index(['business_id', 'customer_id']);
+            $table->index(['business_id', 'warehouse_id']);
+        });
+
+        Schema::create('order_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
+            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained('products')->restrictOnDelete();
+            $table->string('product_sku', 100);
+            $table->string('product_name');
+            $table->decimal('quantity', 18, 3)->default(0);
+            $table->decimal('unit_price', 18, 2)->default(0);
+            $table->decimal('discount_amount', 18, 2)->default(0);
+            $table->decimal('line_total', 18, 2)->default(0);
+            $table->timestamps();
+
+            $table->index(['business_id', 'order_id']);
+            $table->index(['business_id', 'product_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('order_items');
+        Schema::dropIfExists('orders');
+    }
+};

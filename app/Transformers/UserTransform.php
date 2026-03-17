@@ -7,47 +7,29 @@ use League\Fractal\TransformerAbstract;
 
 class UserTransform extends TransformerAbstract
 {
-    /**
-     * List of resources to automatically include
-     *
-     * @var array
-     */
-    protected array $defaultIncludes = [
-        //
-    ];
+    protected array $defaultIncludes = [];
 
-    /**
-     * List of resources possible to include
-     *
-     * @var array
-     */
-    protected array $availableIncludes = [
-        //
-    ];
+    protected array $availableIncludes = [];
 
-    /**
-     * A Fractal transformer.
-     *
-     * @param User $entry
-     * @return array
-     */
     public function transform(User $entry): array
     {
+        $membership = $entry->businessMemberships->first();
+        $business = $membership?->business;
 
         return [
             'id' => $entry->id,
-            'department_id' => $entry->department_id,
-            'status_id' => $entry->status_id,
+            'business_id' => $membership?->business_id,
+            'business_name' => $business?->name ?? '',
             'name' => $entry->name,
             'email' => $entry->email,
             'phone' => $entry->phone,
             'avatar' => $entry->avatar,
-            'role' => $entry->role,
+            'is_active' => (bool) $entry->is_active,
+            'role' => $membership?->role ?? null,
+            'membership_status' => $membership?->status ?? null,
+            'is_owner' => (bool) ($membership?->is_owner ?? false),
+            'joined_at' => $membership?->joined_at,
             'last_login_at' => $entry->last_login_at,
-            'change_password_at' => $entry->change_password_at,
-            'name_department' => $entry->department->name ?? '',
-            'name_status' => $entry->status->name ?? '',
         ];
     }
-
 }

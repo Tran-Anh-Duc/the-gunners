@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginUserRequest;
 use App\Http\Requests\RegisterUserRequest;
-use App\Repositories\UserRepository;
+use App\Services\AuthService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use App\Helpers\JwtHelper;
@@ -14,34 +14,28 @@ use Illuminate\Support\Facades\Cache;
 class AuthController extends Controller
 {
     use ApiResponse;
-    protected UserRepository $userRepository;
-    public function __construct(UserRepository $userRepository)
+
+    public function __construct(private readonly AuthService $authService)
     {
-        $this->userRepository = $userRepository;
     }
 
     public function register(RegisterUserRequest $request)
     {
-        $data = $request->validated();
-
-        $resultData = $this->userRepository->registerAuth($data);
         return $this->successResponse(
             message: __('messages.register.action_created_success'),
             code: 'register',
             httpStatus: Controller::HTTP_OK,
-            data: $resultData,
+            data: $this->authService->register($request->validated()),
         );
     }
 
     public function login(LoginUserRequest $request)
     {
-        $data = $request->all();
-        $user = $this->userRepository->loginUser($data);
         return $this->successResponse(
             message: __('messages.user.user_login_success'),
             code: 'login_success',
             httpStatus: Controller::HTTP_OK,
-            data: $user
+            data: $this->authService->login($request->validated())
         );
     }
 

@@ -4,16 +4,12 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
-class UpdateUserRequest extends BaseFormRequest
+class UpdateUserRequest extends BaseBusinessRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     public function rules(): array
     {
         return [
+            'business_id' => $this->businessRules(),
             'name' => [
                 'sometimes',
                 'required',
@@ -45,29 +41,20 @@ class UpdateUserRequest extends BaseFormRequest
             'role' => [
                 'nullable',
                 'string',
-                Rule::exists('roles', 'name'),
+                Rule::in(['owner', 'manager', 'staff']),
             ],
-            'role_ids' => [
+            'membership_status' => [
                 'nullable',
-                'array',
+                'string',
+                Rule::in(['active', 'invited', 'inactive']),
             ],
-            'role_ids.*' => [
-                'integer',
-                Rule::exists('roles', 'id'),
+            'is_owner' => [
+                'nullable',
+                'boolean',
             ],
             'is_active' => [
                 'nullable',
                 'boolean',
-            ],
-            'department_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('departments', 'id'),
-            ],
-            'status_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('users_status', 'id'),
             ],
         ];
     }
