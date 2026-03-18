@@ -16,6 +16,7 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use App\Http\Controllers\Controller;
 
+
 /**
  * Controller quản lý user trong business hiện tại.
  *
@@ -54,6 +55,7 @@ class UserController extends ApiController
             transformer: $this->userTransform,
             defaultPerPage: 10,
         );
+
 
         return $this->successResponse(
             message: __('messages.user.user_list_success'),
