@@ -2,6 +2,11 @@
 
 namespace App\Http\Requests;
 
+/**
+ * Validate tạo mới nhà cùng cấp.
+ *
+ * Supplier được dùng cho nhập kho va chỉ tien, nen thông tin lien he cần ro rang.
+ */
 class StoreSupplierRequest extends BaseBusinessRequest
 {
     public function rules(): array

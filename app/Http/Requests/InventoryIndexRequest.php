@@ -2,8 +2,20 @@
 
 namespace App\Http\Requests;
 
+/**
+ * Request đọc tồn kho hiện tại.
+ *
+ * Đây là request list có thêm filter nghiệp vụ:
+ * - warehouse_id
+ * - product_id
+ * - product_name
+ * - sku
+ */
 class InventoryIndexRequest extends BaseBusinessRequest
 {
+    /**
+     * Rule cho màn hình xem tồn kho hiện tại.
+     */
     public function rules(): array
     {
         return [

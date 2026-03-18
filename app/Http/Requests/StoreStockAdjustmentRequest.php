@@ -4,8 +4,20 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate tạo chứng từ kiểm kho/điều chỉnh tồn.
+ *
+ * Adjustment item cần `counted_qty` để tính chênh lệch,
+ * còn `expected_qty` có thể để hệ thống tự suy ra từ current stock.
+ */
 class StoreStockAdjustmentRequest extends BaseBusinessRequest
 {
+    /**
+     * Rule validate đầu vào cho nghiệp vụ kiểm kho.
+     *
+     * Service sẽ tính tiếp `difference_qty` và `line_total`
+     * sau khi request đã qua bước xác thực dữ liệu cơ bản.
+     */
     public function rules(): array
     {
         $businessId = $this->integer('business_id');

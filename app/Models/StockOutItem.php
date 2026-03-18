@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @mixin IdeHelperStockOutItem
  */
+/**
+ * Dong chỉ tiết phiếu xuất kho.
+ *
+ * unit_price là giá ban/sales amount; giá von se do ledger tinh lại khi confirm.
+ */
 class StockOutItem extends Model
 {
     protected $fillable = [
@@ -32,16 +37,19 @@ class StockOutItem extends Model
 
     public function business(): BelongsTo
     {
+        // Dong xuat hang thuộc business nào.
         return $this->belongsTo(Business::class);
     }
 
     public function stockOut(): BelongsTo
     {
+        // Dong nay nằm trong phiếu xuat nào.
         return $this->belongsTo(StockOut::class);
     }
 
     public function product(): BelongsTo
     {
+        // Sản phẩm được xuat.
         return $this->belongsTo(Product::class);
     }
 }

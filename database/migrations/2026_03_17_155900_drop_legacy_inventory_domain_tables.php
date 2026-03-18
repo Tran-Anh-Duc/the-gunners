@@ -5,8 +5,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Xóa toàn bộ schema domain cũ để chuẩn bị dựng schema MVP mới.
+     *
+     * Đây là migration "dọn nền" một chiều,
+     * phục vụ quá trình tái cấu trúc lại domain inventory của dự án.
+     */
     public function up(): void
     {
+        // Reset toàn bộ schema domain cũ để dựng lại MVP mới từ đầu.
         Schema::disableForeignKeyConstraints();
 
         foreach ([
@@ -48,6 +55,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        // This migration is a one-way reset from the legacy schema.
+        // Migration này là bước reset một chiều nên không hỗ trợ rollback ngược.
     }
 };

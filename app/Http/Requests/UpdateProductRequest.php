@@ -4,6 +4,12 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate cập nhật san phâm.
+ *
+ * product_type của MVP hien chỉ hỗ trợ simple,
+ * để tránh dua variant vao qua som.
+ */
 class UpdateProductRequest extends BaseBusinessRequest
 {
     public function rules(): array

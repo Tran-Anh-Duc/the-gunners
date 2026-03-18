@@ -6,8 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Tạo nhóm bảng thanh toán và tồn kho.
+     *
+     * Đây là nơi tách rõ:
+     * - `payments`: chứng từ thu/chi;
+     * - `inventory_movements`: nguồn sự thật của tồn kho;
+     * - `current_stocks`: bảng tổng hợp để truy vấn nhanh.
+     */
     public function up(): void
     {
+        // `payments` giữ mức cơ bản cho thu hoặc chi liên quan đến order và nhập hàng.
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -32,6 +41,7 @@ return new class extends Migration
             $table->index(['business_id', 'order_id']);
         });
 
+        // `inventory_movements` là nguồn dữ liệu gốc của tồn kho.
         Schema::create('inventory_movements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -53,6 +63,7 @@ return new class extends Migration
             $table->index(['source_type', 'source_id']);
         });
 
+        // `current_stocks` là bảng tổng hợp để đọc nhanh tồn hiện tại, không phải source of truth.
         Schema::create('current_stocks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -71,6 +82,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Xóa read model trước, ledger sau, cuối cùng mới xóa payment.
         Schema::dropIfExists('current_stocks');
         Schema::dropIfExists('inventory_movements');
         Schema::dropIfExists('payments');

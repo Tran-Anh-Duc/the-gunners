@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate cập nhật đơn vì tinh.
+ *
+ * Khi update code, rule unique se bo qua chinh record hiện tại.
+ */
 class UpdateUnitRequest extends BaseBusinessRequest
 {
     public function rules(): array

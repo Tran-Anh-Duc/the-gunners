@@ -2,6 +2,11 @@
 
 namespace App\Http\Requests;
 
+/**
+ * Validate cập nhật khách hàng.
+ *
+ * Dung `sometimes` cho trường bat buoc để update partial để hon cho frontend.
+ */
 class UpdateCustomerRequest extends BaseBusinessRequest
 {
     public function rules(): array

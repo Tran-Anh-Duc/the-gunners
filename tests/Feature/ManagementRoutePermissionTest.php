@@ -7,8 +7,14 @@ use Tests\TestCase;
 
 class ManagementRoutePermissionTest extends TestCase
 {
+    /**
+     * Khóa contract phân quyền cho các route quản lý user.
+     *
+     * Nếu middleware bị gỡ hoặc gắn sai action, test này sẽ báo đỏ ngay.
+     */
     public function test_user_management_routes_are_protected_by_user_permissions(): void
     {
+        // Các route nhạy cảm phải gắn đúng middleware permission theo action.
         $indexRoute = app('router')->getRoutes()->match(Request::create('/api/users', 'GET'));
         $storeRoute = app('router')->getRoutes()->match(Request::create('/api/auth/users', 'POST'));
         $updateRoute = app('router')->getRoutes()->match(Request::create('/api/auth/users/1', 'PUT'));
@@ -20,8 +26,12 @@ class ManagementRoutePermissionTest extends TestCase
         $this->assertContains('permission:users,delete', $deleteRoute->gatherMiddleware());
     }
 
+    /**
+     * Khóa contract phân quyền cho module sản phẩm.
+     */
     public function test_product_routes_are_protected_by_product_permissions(): void
     {
+        // `products` tách riêng khỏi `inventory` để có thể phân quyền hoặc bán module độc lập.
         $indexRoute = app('router')->getRoutes()->match(Request::create('/api/products', 'GET'));
         $storeRoute = app('router')->getRoutes()->match(Request::create('/api/products', 'POST'));
         $updateRoute = app('router')->getRoutes()->match(Request::create('/api/products/1', 'PUT'));
@@ -33,8 +43,12 @@ class ManagementRoutePermissionTest extends TestCase
         $this->assertContains('permission:products,delete', $deleteRoute->gatherMiddleware());
     }
 
+    /**
+     * Khóa contract phân quyền cho module inventory.
+     */
     public function test_inventory_routes_are_protected_by_inventory_permissions(): void
     {
+        // `inventory` gom nhập, xuất, kiểm kho và xem tồn kho.
         $stockInStoreRoute = app('router')->getRoutes()->match(Request::create('/api/stock-in', 'POST'));
         $stockOutStoreRoute = app('router')->getRoutes()->match(Request::create('/api/stock-out', 'POST'));
         $inventoryStocksRoute = app('router')->getRoutes()->match(Request::create('/api/inventory/stocks', 'GET'));
@@ -48,8 +62,12 @@ class ManagementRoutePermissionTest extends TestCase
         $this->assertContains('permission:inventory,view', $inventoryStocksRoute->gatherMiddleware());
     }
 
+    /**
+     * Khóa contract phân quyền cho module order và payment.
+     */
     public function test_order_and_payment_routes_are_protected_by_their_permissions(): void
     {
+        // `orders` và `payments` là hai module tách quyền riêng để dễ mở rộng theo gói sau này.
         $orderStoreRoute = app('router')->getRoutes()->match(Request::create('/api/orders', 'POST'));
         $orderConfirmRoute = app('router')->getRoutes()->match(Request::create('/api/orders/1/confirm', 'POST'));
         $paymentStoreRoute = app('router')->getRoutes()->match(Request::create('/api/payments', 'POST'));

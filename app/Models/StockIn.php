@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @mixin IdeHelperStockIn
  */
+/**
+ * Header phiếu nhập kho.
+ *
+ * Document nay là đầu vao chinh của tồn kho va giá von.
+ * Chi tiết hang nhap được luu o stock_in_items.
+ */
 class StockIn extends Model
 {
     protected $table = 'stock_in';
@@ -41,31 +47,37 @@ class StockIn extends Model
 
     public function business(): BelongsTo
     {
+        // Phieu nhap thuộc business nào.
         return $this->belongsTo(Business::class);
     }
 
     public function warehouse(): BelongsTo
     {
+        // Kho nhận hang.
         return $this->belongsTo(Warehouse::class);
     }
 
     public function supplier(): BelongsTo
     {
+        // Nhà cùng cấp của phiếu nhap nếu co.
         return $this->belongsTo(Supplier::class);
     }
 
     public function creator(): BelongsTo
     {
+        // User lap phiếu nhap.
         return $this->belongsTo(User::class, 'created_by');
     }
 
     public function items(): HasMany
     {
+        // Cac dòng hang được nhap.
         return $this->hasMany(StockInItem::class);
     }
 
     public function payments(): HasMany
     {
+        // Cac payment chỉ tien liên quan đến phiếu nhap nay.
         return $this->hasMany(Payment::class);
     }
 }

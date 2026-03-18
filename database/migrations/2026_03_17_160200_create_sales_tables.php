@@ -6,8 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Tạo nhóm bảng bán hàng.
+     *
+     * Thiết kế chính:
+     * - `orders` giữ phần header;
+     * - `order_items` giữ snapshot chi tiết từng dòng hàng.
+     *
+     * Cách tách này giúp dữ liệu lịch sử không bị đổi theo catalog mới.
+     */
     public function up(): void
     {
+        // `orders` là chứng từ bán hàng, tách header và item để dễ mở rộng.
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -33,6 +43,7 @@ return new class extends Migration
             $table->index(['business_id', 'warehouse_id']);
         });
 
+        // `order_items` snapshot tên và SKU sản phẩm để không bị ảnh hưởng bởi việc sửa catalog về sau.
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -53,6 +64,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Xóa item trước rồi mới xóa header.
         Schema::dropIfExists('order_items');
         Schema::dropIfExists('orders');
     }

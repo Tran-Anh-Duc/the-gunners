@@ -2,6 +2,11 @@
 
 namespace App\Http\Requests;
 
+/**
+ * Validate cập nhật nhà cùng cấp.
+ *
+ * Cho phep update partial nhưng van giữ cac rule co ban ve email/phone.
+ */
 class UpdateSupplierRequest extends BaseBusinessRequest
 {
     public function rules(): array

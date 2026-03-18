@@ -6,8 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Tạo các bảng lõi cho mô hình multi-tenant.
+     *
+     * Nhóm bảng này là nền tảng của toàn bộ ứng dụng:
+     * - `businesses`: tenant hoặc shop;
+     * - `users`: tài khoản hệ thống;
+     * - `business_users`: membership theo business;
+     * - `business_modules`: module được bật cho từng business.
+     */
     public function up(): void
     {
+        // `businesses` là tenant gốc, mỗi shop sẽ map vào một business.
         Schema::create('businesses', function (Blueprint $table) {
             $table->id();
             $table->string('code', 50)->unique();
@@ -23,6 +33,7 @@ return new class extends Migration
             $table->softDeletes();
         });
 
+        // `users` là tài khoản dùng chung toàn hệ thống, chưa gắn tenant trực tiếp.
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -37,6 +48,7 @@ return new class extends Migration
             $table->softDeletes();
         });
 
+        // `business_users` là membership dùng để gắn user vào business và lưu role hiện tại.
         Schema::create('business_users', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -51,6 +63,7 @@ return new class extends Migration
             $table->index(['business_id', 'role']);
         });
 
+        // `business_modules` dùng để bật hoặc tắt module theo gói dịch vụ của từng business.
         Schema::create('business_modules', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -66,6 +79,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Rollback theo thứ tự ngược lại để tránh vướng khóa ngoại.
         Schema::dropIfExists('business_modules');
         Schema::dropIfExists('business_users');
         Schema::dropIfExists('users');

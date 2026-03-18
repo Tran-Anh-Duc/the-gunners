@@ -4,8 +4,26 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate tạo đơn hàng.
+ *
+ * Giải thích field chính:
+ * - `warehouse_id`: kho xuất dự kiến
+ * - `customer_id`: khach mua, có thể null
+ * - `order_no`: có thể do frontend gửi hoặc để service tự sinh
+ * - `items.*.product_id`: sản phẩm được bán
+ * - `items.*.quantity`: số lượng bán
+ * - `items.*.unit_price`: giá bán, có thể để null để service lấy mặc định
+ * - `items.*.discount_amount`: giảm giá theo dòng
+ */
 class StoreOrderRequest extends BaseBusinessRequest
 {
+    /**
+     * Rule validate đầu vào cho nghiệp vụ tạo đơn hàng.
+     *
+     * Request chỉ kiểm tra format và enum cơ bản; business scope thật sự
+     * của warehouse, customer và product sẽ được service kiểm tra thêm.
+     */
     public function rules(): array
     {
         $businessId = $this->integer('business_id');

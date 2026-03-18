@@ -4,6 +4,12 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate tạo mới đơn vì tinh.
+ *
+ * cođể của unit phải unique trong pham vì business,
+ * vì mỗi shop có thể dat quy uoc cođể rieng.
+ */
 class StoreUnitRequest extends BaseBusinessRequest
 {
     public function rules(): array

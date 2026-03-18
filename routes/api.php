@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\OrderController;
@@ -15,13 +15,14 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\TestController;
 
+// Nhóm xác thực tách riêng vì vừa có route public, vừa có route yêu cầu token.
 Route::prefix('auth')->group(function () {
-    Route::post('login', [AuthController::class, 'login']);
-    Route::post('register', [AuthController::class, 'register']);
+    Route::post('login', [ApiAuthController::class, 'login']);
+    Route::post('register', [ApiAuthController::class, 'register']);
 
     Route::middleware('jwt')->group(function () {
-        Route::post('logout', [AuthController::class, 'logout']);
-        Route::get('me', [AuthController::class, 'me']);
+        Route::post('logout', [ApiAuthController::class, 'logout']);
+        Route::get('me', [ApiAuthController::class, 'me']);
 
         Route::prefix('users')->group(function () {
             Route::post('/', [UserController::class, 'store'])->middleware('permission:users,create');
@@ -31,6 +32,7 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// Từ đây trở xuống là các API business-scoped của MVP quản lý kho mini.
 Route::middleware('jwt')->prefix('users')->group(function () {
     Route::get('/', [UserController::class, 'index'])->middleware('permission:users,view');
     Route::get('/{id}', [UserController::class, 'show'])->middleware('permission:users,view');
@@ -125,4 +127,5 @@ Route::middleware('jwt')->prefix('inventory')->group(function () {
     Route::get('/stocks', [InventoryController::class, 'index'])->middleware('permission:inventory,view');
 });
 
+// Route test thủ công được giữ lại để debug nhanh trong môi trường local.
 Route::get('/test', [TestController::class, 'twoSum']);

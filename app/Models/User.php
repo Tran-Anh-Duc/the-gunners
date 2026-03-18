@@ -13,6 +13,12 @@ use Illuminate\Notifications\Notifiable;
 /**
  * @mixin IdeHelperUser
  */
+/**
+ * User hệ thống.
+ *
+ * Bảng `users` không lưu role theo business.
+ * Quyền và vai trò được suy ra từ `business_users` để hỗ trợ mô hình multi-business.
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -44,6 +50,7 @@ class User extends Authenticatable
 
     public function businesses(): BelongsToMany
     {
+        // Danh sách business mà user đang tham gia thông qua pivot `business_users`.
         return $this->belongsToMany(Business::class, 'business_users')
             ->withPivot(['role', 'status', 'is_owner', 'joined_at'])
             ->withTimestamps();
@@ -51,16 +58,19 @@ class User extends Authenticatable
 
     public function businessMemberships(): HasMany
     {
+        // Toàn bộ membership của user trên các business.
         return $this->hasMany(BusinessUser::class);
     }
 
     public function activeBusinessMemberships(): HasMany
     {
+        // Chỉ lấy membership đang active để dùng cho login, JWT và phân quyền.
         return $this->businessMemberships()->where('status', 'active');
     }
 
     public function hasRole(string $roleName, ?int $businessId = null): bool
     {
+        // Kiểm tra role trong phạm vi business cụ thể hoặc membership active đầu tiên.
         return $this->scopedMembershipQuery($businessId)
             ->where('role', $roleName)
             ->exists();
@@ -68,6 +78,12 @@ class User extends Authenticatable
 
     public function hasPermission(string $permissionName, ?int $businessId = null): bool
     {
+        /**
+         * MVP chưa dùng hệ permission DB đầy đủ.
+         *
+         * Tạm thời map permission cứng dựa trên role membership
+         * để dễ maintain và sẵn sàng thay bằng RBAC sau này.
+         */
         $membership = $this->scopedMembershipQuery($businessId)->first();
 
         if (! $membership) {
@@ -129,6 +145,7 @@ class User extends Authenticatable
 
     protected function scopedMembershipQuery(?int $businessId = null)
     {
+        // Helper nội bộ cho `hasRole()` và `hasPermission()` để lấy membership đúng scope.
         $query = $this->activeBusinessMemberships();
 
         if ($businessId !== null) {

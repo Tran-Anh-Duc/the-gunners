@@ -4,8 +4,24 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate tạo san phâm.
+ *
+ * SKU được unique theo business, không unique toan hệ thống,
+ * vì mỗi shop có thể co quy uoc ma hang rieng.
+ */
 class StoreProductRequest extends BaseBusinessRequest
 {
+    /**
+     * Rule tạo product.
+     *
+     * Giai thich field:
+     * - `unit_id`: đơn vì tinh của sản phẩm
+     * - `sku`: ma hang unique trong business
+     * - `track_inventory`: có thểo đổi tồn kho hay không
+     * - `cost_price`: giá von mặc định
+     * - `sale_price`: giá ban mặc định
+     */
     public function rules(): array
     {
         $businessId = $this->integer('business_id');

@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate cập nhật đơn hàng.
+ *
+ * Nếu FE gui `items`, service se coi do là bo items mới va rebuild lại order_items.
+ */
 class UpdateOrderRequest extends BaseBusinessRequest
 {
     public function rules(): array

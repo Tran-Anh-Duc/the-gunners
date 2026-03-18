@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @mixin IdeHelperOrderItem
  */
+/**
+ * Dong chỉ tiết đơn hàng.
+ *
+ * Luu snapshot SKU/tên/giá để đơn cu không bị anh hướng khi catalog thay doi.
+ */
 class OrderItem extends Model
 {
     protected $fillable = [
@@ -34,16 +39,19 @@ class OrderItem extends Model
 
     public function business(): BelongsTo
     {
+        // Dong item thuộc business nào.
         return $this->belongsTo(Business::class);
     }
 
     public function order(): BelongsTo
     {
+        // Dong item nay thuoc đơn nào.
         return $this->belongsTo(Order::class);
     }
 
     public function product(): BelongsTo
     {
+        // Sản phẩm goc của dòng item.
         return $this->belongsTo(Product::class);
     }
 }

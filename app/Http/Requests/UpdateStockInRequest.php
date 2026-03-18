@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate cập nhật phiếu nhập kho.
+ *
+ * Hỗ trợ sua item va header trước khi confirm document.
+ */
 class UpdateStockInRequest extends BaseBusinessRequest
 {
     public function rules(): array

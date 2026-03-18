@@ -26,8 +26,31 @@ class StockAdjustmentService extends BaseBusinessCrudService
         $this->repository = $stockAdjustmentRepository;
     }
 
+    /**
+     * Tạo chứng từ kiểm kho.
+     *
+     * @param  array<string, mixed>  $data
+     * @return Model
+     *
+     * Item đầu vào thường có dạng:
+     * [
+     *   [
+     *     'product_id' => 10,
+     *     'counted_qty' => 8,
+     *     'expected_qty' => 10
+     *   ]
+     * ]
+     *
+     * Sau khi tạo xong header và item, service sẽ sync ledger nếu document đã `confirmed`.
+     */
     public function create(array $data): Model
     {
+        /**
+         * Tạo chứng từ kiểm kho/điều chỉnh tồn.
+         *
+         * `expected_qty` được lấy từ current stock nếu frontend không gửi,
+         * `counted_qty` là số đếm thực tế và `difference_qty` được tính từ chênh lệch hai giá trị này.
+         */
         $businessId = $this->resolveBusinessId($data);
 
         return DB::transaction(function () use ($businessId, $data) {
@@ -48,6 +71,7 @@ class StockAdjustmentService extends BaseBusinessCrudService
 
             $this->stockAdjustmentRepository->replaceItems($stockAdjustment, $businessId, $itemsPayload);
 
+            // Adjustment là nghiệp vụ điều chỉnh chênh lệch kiểm kho nên phải sync ledger ngay sau khi lưu.
             $stockAdjustment = $this->stockAdjustmentRepository->findForBusiness($businessId, $stockAdjustment->id, ['items.product']);
             $this->inventoryLedgerService->syncStockAdjustment($stockAdjustment);
 
@@ -55,8 +79,19 @@ class StockAdjustmentService extends BaseBusinessCrudService
         });
     }
 
+    /**
+     * Cập nhật document kiểm kho.
+     *
+     * @param  int  $id
+     * @param  array<string, mixed>  $data
+     * @return Model
+     *
+     * Nếu request gửi `items`, toàn bộ item sẽ được build lại và replace lại.
+     * Cách này đơn giản hơn cho MVP và bảo đảm ledger luôn đồng bộ.
+     */
     public function update(int $id, array $data): Model
     {
+        // Mỗi lần sửa adjustment đều phải rebuild lại item và ledger liên quan.
         $businessId = $this->resolveBusinessId($data);
 
         return DB::transaction(function () use ($businessId, $id, $data) {
@@ -108,8 +143,29 @@ class StockAdjustmentService extends BaseBusinessCrudService
         return $this->transitionStatus($id, $data, 'cancelled');
     }
 
+    /**
+     * Chuyển item input thành snapshot để lưu DB.
+     *
+     * @param  int  $businessId
+     * @param  int  $warehouseId
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array{0: array<int, array<string, mixed>>}
+     *
+     * Cách tính:
+     * - `expected_qty`: lấy từ request nếu có, nếu không thì đọc từ `current_stocks`;
+     * - `counted_qty`: số lượng kiểm thực tế do người dùng nhập;
+     * - `difference_qty = counted_qty - expected_qty`;
+     * - `unit_cost`: ưu tiên request, rồi `avg_unit_cost` hiện tại, rồi `cost_price` của product.
+     */
     protected function buildItems(int $businessId, int $warehouseId, array $items): array
     {
+        /**
+         * Chuẩn hóa item kiểm kho thành snapshot lưu DB.
+         *
+         * `expected_qty`: tồn hệ thống;
+         * `counted_qty`: tồn đếm thực tế;
+         * `difference_qty`: lượng chênh lệch cần đưa vào ledger.
+         */
         $payloads = [];
 
         foreach ($items as $item) {
@@ -124,6 +180,7 @@ class StockAdjustmentService extends BaseBusinessCrudService
                 ->where('product_id', $product->id)
                 ->first();
 
+            // Nếu frontend không truyền `expected_qty` thì lấy theo tồn hiện tại của kho - sản phẩm.
             $expectedQty = array_key_exists('expected_qty', $item)
                 ? (float) $item['expected_qty']
                 : (float) ($currentStock?->quantity_on_hand ?? 0);
@@ -147,11 +204,24 @@ class StockAdjustmentService extends BaseBusinessCrudService
         return [$payloads];
     }
 
+    /**
+     * Đổi trạng thái adjustment và rebuild ledger.
+     *
+     * @param  int  $id
+     * @param  array<string, mixed>  $data
+     * @param  string  $status
+     * @return Model
+     *
+     * Vì adjustment là document tác động trực tiếp vào tồn,
+     * nên confirm hoặc cancel đều phải sync lại ledger/current stock.
+     */
     protected function transitionStatus(int $id, array $data, string $status): Model
     {
+        // Confirm hoặc cancel adjustment sẽ thay đổi đầu vào của tồn kho nên bắt buộc sync lại ledger.
         $businessId = $this->resolveBusinessId($data);
 
         return DB::transaction(function () use ($businessId, $id, $status) {
+            // Adjustment là đầu vào trực tiếp của ledger nên đổi status là phải tính lại toàn bộ.
             $stockAdjustment = $this->stockAdjustmentRepository->findForBusiness($businessId, $id, ['items.product']);
             $this->stockAdjustmentRepository->updateRecord($stockAdjustment, ['status' => $status]);
             $stockAdjustment = $this->stockAdjustmentRepository->findForBusiness($businessId, $stockAdjustment->id, ['items.product']);

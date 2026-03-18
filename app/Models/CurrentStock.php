@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Bang tổng hợp tồn kho hiện tại.
+ *
+ * current_stocks chỉ là read model để query nhanh.
+ * Nguon su that van là inventory_movements.
+ */
 class CurrentStock extends Model
 {
     protected $table = 'current_stocks';
@@ -31,16 +37,19 @@ class CurrentStock extends Model
 
     public function business(): BelongsTo
     {
+        // Dong tồn kho nay thuộc business nào.
         return $this->belongsTo(Business::class);
     }
 
     public function warehouse(): BelongsTo
     {
+        // Tồn kho hiện tại của kho nào.
         return $this->belongsTo(Warehouse::class);
     }
 
     public function product(): BelongsTo
     {
+        // Tồn kho hiện tại của sản phẩm nào.
         return $this->belongsTo(Product::class);
     }
 }

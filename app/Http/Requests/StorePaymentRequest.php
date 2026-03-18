@@ -4,8 +4,23 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate tạo phiếu thu/chi.
+ *
+ * Request chỉ kiểm tra format và enum cơ bản.
+ * Việc khóa ngoại có cùng business hay không sẽ được service kiểm tra lại.
+ */
 class StorePaymentRequest extends BaseBusinessRequest
 {
+    /**
+     * Rule tạo payment.
+     *
+     * Giải thích field chính:
+     * - `direction`: `in` là thu tiền, `out` là chi tiền
+     * - `method`: cách thanh toán
+     * - `status`: trạng thái thanh toán hiện tại
+     * - `order_id`/`stock_in_id`: document liên quan nếu có
+     */
     public function rules(): array
     {
         $businessId = $this->integer('business_id');

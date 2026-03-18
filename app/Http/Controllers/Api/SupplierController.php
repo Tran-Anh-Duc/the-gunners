@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\BusinessActionRequest;
 use App\Http\Requests\BusinessIndexRequest;
 use App\Http\Requests\StoreSupplierRequest;
@@ -11,7 +10,13 @@ use App\Services\SupplierService;
 use App\Traits\HasApiPagination;
 use Illuminate\Http\JsonResponse;
 
-class SupplierController extends Controller
+/**
+ * Controller CRUD nhà cung cấp.
+ *
+ * Nhà cung cấp được dùng cho nhập kho và các phiếu chi,
+ * nên việc scope đúng business là rất quan trọng.
+ */
+class SupplierController extends ApiController
 {
     use HasApiPagination;
 
@@ -19,8 +24,12 @@ class SupplierController extends Controller
     {
     }
 
+    /**
+     * Danh sách nhà cung cấp trong business hiện tại.
+     */
     public function index(BusinessIndexRequest $request): JsonResponse
     {
+        // Service chịu trách nhiệm lọc theo tenant và điều kiện tìm kiếm; controller chỉ paginate.
         [, $query] = $this->supplierService->paginate(array_merge(
             $request->validated(),
             $request->only($this->supplierService->searchableFilters()),
@@ -34,6 +43,9 @@ class SupplierController extends Controller
         );
     }
 
+    /**
+     * Lấy chi tiết một nhà cung cấp.
+     */
     public function show(BusinessActionRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(
@@ -44,8 +56,12 @@ class SupplierController extends Controller
         );
     }
 
+    /**
+     * Tạo nhà cung cấp mới.
+     */
     public function store(StoreSupplierRequest $request): JsonResponse
     {
+        // Controller không tự ghi model; toàn bộ xử lý đều đi qua service.
         return $this->successResponse(
             'Created successfully.',
             'create_success',
@@ -54,6 +70,9 @@ class SupplierController extends Controller
         );
     }
 
+    /**
+     * Cập nhật nhà cung cấp.
+     */
     public function update(UpdateSupplierRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(
@@ -64,6 +83,9 @@ class SupplierController extends Controller
         );
     }
 
+    /**
+     * Xóa nhà cung cấp trong phạm vi business hiện tại.
+     */
     public function destroy(BusinessActionRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(

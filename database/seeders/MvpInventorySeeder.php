@@ -27,10 +27,26 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Seeder dữ liệu demo cho MVP quản lý kho.
+ *
+ * Bộ dữ liệu này mô phỏng một shop nhỏ đã có:
+ * - business, user và membership;
+ * - danh mục hàng hóa, kho, khách hàng, nhà cung cấp;
+ * - chứng từ nhập, xuất, kiểm kho, thanh toán;
+ * - read model tồn kho để UI có thể dùng ngay.
+ */
 class MvpInventorySeeder extends Seeder
 {
+    /**
+     * Gieo toàn bộ dữ liệu demo trong một transaction.
+     *
+     * Cách làm này giúp seed hoặc thành công trọn vẹn,
+     * hoặc rollback toàn bộ nếu có lỗi giữa chừng.
+     */
     public function run(): void
     {
+        // Gieo dữ liệu demo trong transaction để nếu lỗi sẽ rollback trọn gói.
         DB::transaction(function () {
             $business = $this->seedBusiness();
             $users = $this->seedUsers();
@@ -50,6 +66,11 @@ class MvpInventorySeeder extends Seeder
         });
     }
 
+    /**
+     * Tạo hoặc làm mới business demo gốc của hệ thống.
+     *
+     * Business này đóng vai trò tenant mẫu cho toàn bộ dữ liệu seed phía sau.
+     */
     protected function seedBusiness(): Business
     {
         $business = Business::withTrashed()->updateOrCreate(
@@ -75,6 +96,11 @@ class MvpInventorySeeder extends Seeder
 
     /**
      * @return array<string, User>
+     *
+     * Tạo bộ user demo theo ba vai trò chính:
+     * - owner
+     * - manager
+     * - staff
      */
     protected function seedUsers(): array
     {
@@ -121,8 +147,15 @@ class MvpInventorySeeder extends Seeder
         return $users;
     }
 
+    /**
+     * Dọn sạch dữ liệu nghiệp vụ cũ của business demo trước khi seed lại.
+     *
+     * Thứ tự xóa được sắp theo quan hệ nghiệp vụ để tránh vướng khóa ngoại
+     * và bảo đảm lần seed sau luôn cho ra bộ dữ liệu nhất quán.
+     */
     protected function resetDemoBusinessData(int $businessId): void
     {
+        // Xóa dữ liệu demo cũ theo đúng thứ tự nghiệp vụ để seed lại không bị trùng.
         CurrentStock::query()->where('business_id', $businessId)->delete();
         InventoryMovement::query()->where('business_id', $businessId)->delete();
         Payment::query()->where('business_id', $businessId)->delete();
@@ -146,9 +179,12 @@ class MvpInventorySeeder extends Seeder
 
     /**
      * @param  array<string, User>  $users
+     *
+     * Gắn user demo vào business với các vai trò khác nhau.
      */
     protected function seedMemberships(Business $business, array $users): void
     {
+        // Membership là lớp mang role và quyền truy cập theo business trong MVP.
         $joinedAt = CarbonImmutable::now()->subMonths(2);
 
         BusinessUser::query()->create([
@@ -179,8 +215,15 @@ class MvpInventorySeeder extends Seeder
         ]);
     }
 
+    /**
+     * Bật bộ module mặc định cho business demo.
+     *
+     * Việc seed sẵn giúp UI có thể dựa vào `business_modules`
+     * để hiển thị hoặc ẩn bớt tính năng ngay từ dữ liệu demo.
+     */
     protected function seedModules(Business $business): void
     {
+        // Đây là bộ module cơ bản mà UI có thể bật hoặc tắt theo gói.
         $startedAt = CarbonImmutable::now()->subMonth();
 
         foreach (['products', 'inventory', 'orders', 'customers', 'suppliers', 'payments'] as $moduleCode) {
@@ -196,6 +239,8 @@ class MvpInventorySeeder extends Seeder
 
     /**
      * @return array<string, Unit>
+     *
+     * Tạo danh mục đơn vị tính cơ bản cho shop demo.
      */
     protected function seedUnits(Business $business): array
     {
@@ -203,12 +248,12 @@ class MvpInventorySeeder extends Seeder
             'pcs' => [
                 'code' => 'PCS',
                 'name' => 'Cai',
-                'description' => 'Don vi ban le mac dinh',
+                'description' => 'Don vì ban le mặc định',
             ],
             'box' => [
                 'code' => 'BOX',
                 'name' => 'Hop',
-                'description' => 'Dong goi theo hop',
+                'description' => 'Dong gọi theo hop',
             ],
         ];
 
@@ -227,6 +272,8 @@ class MvpInventorySeeder extends Seeder
 
     /**
      * @return array<string, Warehouse>
+     *
+     * Tạo các kho mẫu để mô phỏng bài toán tồn kho nhiều địa điểm.
      */
     protected function seedWarehouses(Business $business): array
     {
@@ -238,7 +285,7 @@ class MvpInventorySeeder extends Seeder
             ],
             'online' => [
                 'code' => 'WH-ONLINE',
-                'name' => 'Kho don online',
+                'name' => 'Kho đơn online',
                 'address' => 'Tang 2 - 123 Nguyen Trai',
             ],
         ];
@@ -258,6 +305,9 @@ class MvpInventorySeeder extends Seeder
 
     /**
      * @return array<string, Customer>
+     *
+     * Tạo một vài khách hàng demo với nguồn mua khác nhau
+     * để dữ liệu list và chứng từ bán hàng sinh động hơn.
      */
     protected function seedCustomers(Business $business): array
     {
@@ -267,7 +317,7 @@ class MvpInventorySeeder extends Seeder
                 'phone' => '0902333444',
                 'email' => 'linh.customer@example.com',
                 'address' => 'Go Vap, Ho Chi Minh',
-                'note' => 'Khach mua tu Facebook',
+                'note' => 'Khach mua từ Facebook',
             ],
             'quang' => [
                 'name' => 'Tran Minh Quang',
@@ -281,7 +331,7 @@ class MvpInventorySeeder extends Seeder
                 'phone' => '0902999888',
                 'email' => 'nhi.customer@example.com',
                 'address' => 'Quan 7, Ho Chi Minh',
-                'note' => 'Khach mua lai nhieu lan',
+                'note' => 'Khach mua lại nhieu lan',
             ],
         ];
 
@@ -302,6 +352,8 @@ class MvpInventorySeeder extends Seeder
 
     /**
      * @return array<string, Supplier>
+     *
+     * Tạo nhà cung cấp mẫu cho luồng nhập hàng và thanh toán ra.
      */
     protected function seedSuppliers(Business $business): array
     {
@@ -312,7 +364,7 @@ class MvpInventorySeeder extends Seeder
                 'phone' => '02838889999',
                 'email' => 'sales@smart-accessories.local',
                 'address' => 'Binh Tan, Ho Chi Minh',
-                'note' => 'Nha cung cap phu kien dien thoai',
+                'note' => 'Nhà cùng cấp phu kien dien thoai',
             ],
             'packing' => [
                 'name' => 'Packing Hub',
@@ -320,7 +372,7 @@ class MvpInventorySeeder extends Seeder
                 'phone' => '02837775555',
                 'email' => 'hello@packing-hub.local',
                 'address' => 'Tan Phu, Ho Chi Minh',
-                'note' => 'Nha cung cap vat tu dong goi',
+                'note' => 'Nhà cùng cấp vat từ dòng goi',
             ],
         ];
 
@@ -343,17 +395,20 @@ class MvpInventorySeeder extends Seeder
     /**
      * @param  array<string, Unit>  $units
      * @return array<string, Product>
+     *
+     * Tạo danh mục sản phẩm demo.
+     * Dữ liệu được chọn để có cả hàng bán chính và vật tư đóng gói.
      */
     protected function seedProducts(Business $business, array $units): array
     {
         $products = [
             'cable' => [
                 'sku' => 'SKU-CABLE-1M',
-                'name' => 'Cap sac Type-C 1m',
+                'name' => 'Cặp sac Type-C 1m',
                 'barcode' => '8938501000011',
                 'cost_price' => 25000,
                 'sale_price' => 49000,
-                'description' => 'Day cap sac thong dung cho shop online',
+                'description' => 'Day cặp sac thong dùng cho shop online',
             ],
             'charger' => [
                 'sku' => 'SKU-CHARGER-20W',
@@ -361,7 +416,7 @@ class MvpInventorySeeder extends Seeder
                 'barcode' => '8938501000012',
                 'cost_price' => 120000,
                 'sale_price' => 189000,
-                'description' => 'Cu sac nhanh dong chu luc ban chay',
+                'description' => 'Cu sac nhanh dòng chu lúc ban chay',
             ],
             'powerbank' => [
                 'sku' => 'SKU-PBANK-10K',
@@ -373,11 +428,11 @@ class MvpInventorySeeder extends Seeder
             ],
             'bubble-wrap' => [
                 'sku' => 'SKU-BWRAP-50M',
-                'name' => 'Xop hoi dong hang 50m',
+                'name' => 'Xop hoi dòng hang 50m',
                 'barcode' => '8938501000014',
                 'cost_price' => 15000,
                 'sale_price' => 29000,
-                'description' => 'Vat tu dong goi cho don hang',
+                'description' => 'Vat từ dòng gọi cho đơn hàng',
             ],
             'stand' => [
                 'sku' => 'SKU-STAND-ALU',
@@ -385,7 +440,7 @@ class MvpInventorySeeder extends Seeder
                 'barcode' => '8938501000015',
                 'cost_price' => 35000,
                 'sale_price' => 69000,
-                'description' => 'San pham them de upsell',
+                'description' => 'Sản phẩm them để upsell',
             ],
         ];
 
@@ -415,6 +470,13 @@ class MvpInventorySeeder extends Seeder
      * @param  array<string, Supplier>  $suppliers
      * @param  array<string, Product>  $products
      * @return array<string, mixed>
+     *
+     * Tạo bộ chứng từ mẫu để mô phỏng một luồng nghiệp vụ hoàn chỉnh:
+     * - nhập kho;
+     * - bán hàng;
+     * - xuất kho;
+     * - kiểm kho;
+     * - thu và chi thanh toán.
      */
     protected function seedTransactions(
         Business $business,
@@ -424,6 +486,7 @@ class MvpInventorySeeder extends Seeder
         array $suppliers,
         array $products
     ): array {
+        // Các mốc thời gian được tách rõ để lịch sử chứng từ và ledger nhìn tự nhiên hơn.
         $purchaseMainDate = CarbonImmutable::now()->subDays(10)->setTime(9, 0);
         $purchaseOnlineDate = CarbonImmutable::now()->subDays(7)->setTime(10, 30);
         $orderDate = CarbonImmutable::now()->subDays(2)->setTime(14, 0);
@@ -511,7 +574,7 @@ class MvpInventorySeeder extends Seeder
             'status' => 'confirmed',
             'subtotal' => 801000,
             'total_amount' => 801000,
-            'note' => 'Xuat kho cho don ORD-0001',
+            'note' => 'Xuất kho cho đơn ORD-0001',
         ]);
 
         $this->createStockOutItems($stockOut, [
@@ -526,14 +589,14 @@ class MvpInventorySeeder extends Seeder
             'created_by' => $users['manager']->id,
             'adjustment_no' => 'ADJ-0001',
             'adjustment_date' => $adjustmentDate,
-            'reason' => 'Kiem kho cuoi ngay',
+            'reason' => 'Kiểm kho cuoi ngay',
             'status' => 'confirmed',
             'note' => 'Lech xop hoi va tim thay them 1 pin du phong',
         ]);
 
         $this->createStockAdjustmentItems($adjustment, [
             [$products['bubble-wrap'], 120, 115, 15000, 'Xop hoi mat do dem sai'],
-            [$products['powerbank'], 25, 26, 210000, 'Tim thay them 1 san pham trong ke'],
+            [$products['powerbank'], 25, 26, 210000, 'Tim thay them 1 sản phẩm trong ke'],
         ]);
 
         $paymentIn = Payment::query()->create([
@@ -567,7 +630,7 @@ class MvpInventorySeeder extends Seeder
             'amount' => 10000000,
             'payment_date' => $purchaseMainDate->addHours(3),
             'reference_no' => $stockInMain->stock_in_no,
-            'note' => 'Thanh toan dot 1 cho nha cung cap Smart Accessories',
+            'note' => 'Thanh toan dot 1 cho nhà cùng cấp Smart Accessories',
         ]);
 
         $paymentOutOnline = Payment::query()->create([
@@ -584,7 +647,7 @@ class MvpInventorySeeder extends Seeder
             'amount' => 2280000,
             'payment_date' => $purchaseOnlineDate->addHours(1),
             'reference_no' => $stockInOnline->stock_in_no,
-            'note' => 'Thanh toan du cho don nhap kho online',
+            'note' => 'Thanh toan du cho đơn nhập kho online',
         ]);
 
         return [
@@ -596,6 +659,11 @@ class MvpInventorySeeder extends Seeder
         ];
     }
 
+    /**
+     * Tạo item cho phiếu nhập kho.
+     *
+     * Item lưu snapshot tên, SKU và giá nhập tại thời điểm phát sinh.
+     */
     protected function createStockInItems(StockIn $stockIn, array $items): void
     {
         foreach ($items as [$product, $quantity, $unitCost]) {
@@ -612,6 +680,11 @@ class MvpInventorySeeder extends Seeder
         }
     }
 
+    /**
+     * Tạo item cho đơn hàng.
+     *
+     * Snapshot này giúp đơn cũ không bị thay đổi khi catalog sản phẩm đổi tên hoặc đổi giá.
+     */
     protected function createOrderItems(Order $order, array $items): void
     {
         foreach ($items as [$product, $quantity, $unitPrice, $discountAmount]) {
@@ -629,6 +702,12 @@ class MvpInventorySeeder extends Seeder
         }
     }
 
+    /**
+     * Tạo item cho phiếu xuất kho.
+     *
+     * `unit_price` ở đây phản ánh giá bán trên chứng từ,
+     * còn giá vốn thực tế sẽ được read model và ledger xử lý riêng.
+     */
     protected function createStockOutItems(StockOut $stockOut, array $items): void
     {
         foreach ($items as [$product, $quantity, $unitPrice]) {
@@ -645,6 +724,12 @@ class MvpInventorySeeder extends Seeder
         }
     }
 
+    /**
+     * Tạo item cho chứng từ kiểm kho.
+     *
+     * `difference_qty` được tính trực tiếp từ `counted_qty - expected_qty`
+     * để có thể dùng ngay cho ledger và báo cáo chênh lệch.
+     */
     protected function createStockAdjustmentItems(StockAdjustment $adjustment, array $items): void
     {
         foreach ($items as [$product, $expectedQty, $countedQty, $unitCost, $note]) {
@@ -671,6 +756,12 @@ class MvpInventorySeeder extends Seeder
      * @param  array<string, Warehouse>  $warehouses
      * @param  array<string, Product>  $products
      * @param  array<string, mixed>  $documents
+     *
+     * Dựng read model tồn kho từ bộ chứng từ demo.
+     *
+     * Seeder này không gọi service ledger,
+     * mà dựng trực tiếp `inventory_movements` và `current_stocks`
+     * để giữ cho dữ liệu mẫu rõ ràng, dễ đọc và dễ kiểm soát.
      */
     protected function seedInventoryReadModels(
         Business $business,
@@ -679,6 +770,7 @@ class MvpInventorySeeder extends Seeder
         array $products,
         array $documents
     ): void {
+        // Biến tạm này mô phỏng trạng thái tồn sau từng movement để cuối cùng ghi vào current_stocks.
         $stockBalances = [];
 
         foreach ($documents['stock_in'] as $stockIn) {
@@ -766,6 +858,12 @@ class MvpInventorySeeder extends Seeder
         }
     }
 
+    /**
+     * Cộng dồn số lượng và giá trị tồn cho một cặp business - kho - sản phẩm.
+     *
+     * Hàm này đóng vai trò bản rút gọn của logic moving average
+     * để seed ra `current_stocks` nhất quán với chuỗi `inventory_movements`.
+     */
     protected function applyStockBalance(
         array &$stockBalances,
         int $businessId,
@@ -775,6 +873,7 @@ class MvpInventorySeeder extends Seeder
         float $unitCost,
         mixed $movementDate
     ): void {
+        // Dùng key chuỗi để gom trạng thái tồn cho từng cặp kho - sản phẩm.
         $key = implode(':', [$businessId, $warehouseId, $productId]);
 
         if (! isset($stockBalances[$key])) {

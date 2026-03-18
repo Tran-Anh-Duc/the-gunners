@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\BusinessActionRequest;
 use App\Http\Requests\BusinessIndexRequest;
 use App\Http\Requests\StoreUnitRequest;
@@ -11,7 +10,14 @@ use App\Services\UnitService;
 use App\Traits\HasApiPagination;
 use Illuminate\Http\JsonResponse;
 
-class UnitController extends Controller
+/**
+ * Controller CRUD đơn vị tính.
+ *
+ * Unit là master data nền của sản phẩm.
+ * Controller này giữ luồng `request -> service -> response` thật gọn
+ * để business rule luôn nằm ở tầng service.
+ */
+class UnitController extends ApiController
 {
     use HasApiPagination;
 
@@ -19,8 +25,12 @@ class UnitController extends Controller
     {
     }
 
+    /**
+     * Danh sách đơn vị tính trong business hiện tại.
+     */
     public function index(BusinessIndexRequest $request): JsonResponse
     {
+        // Việc lọc theo `code` hoặc `name` được giao cho service để tái sử dụng thống nhất.
         [, $query] = $this->unitService->paginate(array_merge(
             $request->validated(),
             $request->only($this->unitService->searchableFilters()),
@@ -34,6 +44,9 @@ class UnitController extends Controller
         );
     }
 
+    /**
+     * Lấy chi tiết một đơn vị tính.
+     */
     public function show(BusinessActionRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(
@@ -44,6 +57,9 @@ class UnitController extends Controller
         );
     }
 
+    /**
+     * Tạo đơn vị tính mới.
+     */
     public function store(StoreUnitRequest $request): JsonResponse
     {
         return $this->successResponse(
@@ -54,6 +70,9 @@ class UnitController extends Controller
         );
     }
 
+    /**
+     * Cập nhật đơn vị tính.
+     */
     public function update(UpdateUnitRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(
@@ -64,6 +83,9 @@ class UnitController extends Controller
         );
     }
 
+    /**
+     * Xóa đơn vị tính trong phạm vi business hiện tại.
+     */
     public function destroy(BusinessActionRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(

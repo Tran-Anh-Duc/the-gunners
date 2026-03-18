@@ -2,6 +2,11 @@
 
 namespace App\Http\Requests;
 
+/**
+ * Validate tạo mới khách hàng.
+ *
+ * Customer MVP được giữ đơn gian: thông tin lien he + trạng thái hoat dòng.
+ */
 class StoreCustomerRequest extends BaseBusinessRequest
 {
     public function rules(): array

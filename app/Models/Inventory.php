@@ -3,7 +3,7 @@
 namespace App\Models;
 
 /**
- * Compatibility alias for code still referring to Inventory.
+ * Alias tuong thich nguoc cho cođể cu van gọi Inventory.
  *
  * @mixin IdeHelperInventory
  */

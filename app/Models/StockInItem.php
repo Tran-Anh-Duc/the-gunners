@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @mixin IdeHelperStockInItem
  */
+/**
+ * Dong chỉ tiết phiếu nhập kho.
+ *
+ * Luu snapshot sản phẩm va giá nhap tai thoi diem phat sinh.
+ */
 class StockInItem extends Model
 {
     protected $fillable = [
@@ -32,16 +37,19 @@ class StockInItem extends Model
 
     public function business(): BelongsTo
     {
+        // Dong nhập hàng thuộc business nào.
         return $this->belongsTo(Business::class);
     }
 
     public function stockIn(): BelongsTo
     {
+        // Dong nay nằm trong phiếu nhap nào.
         return $this->belongsTo(StockIn::class);
     }
 
     public function product(): BelongsTo
     {
+        // Sản phẩm được nhap.
         return $this->belongsTo(Product::class);
     }
 }

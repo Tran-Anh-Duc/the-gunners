@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Throwable;
 
-class ArticleExtractorController extends Controller
+class ArticleExtractorController extends BaseController
 {
     public function __construct(
         protected RenderedArticleExtractor $extractor

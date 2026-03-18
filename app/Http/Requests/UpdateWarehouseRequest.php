@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate cập nhật kho.
+ *
+ * status của kho hiện tại giữ o muc active/inactive để MVP để van hanh.
+ */
 class UpdateWarehouseRequest extends BaseBusinessRequest
 {
     public function rules(): array

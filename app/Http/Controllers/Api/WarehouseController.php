@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\BusinessActionRequest;
 use App\Http\Requests\BusinessIndexRequest;
 use App\Http\Requests\StoreWarehouseRequest;
@@ -11,7 +10,13 @@ use App\Services\WarehouseService;
 use App\Traits\HasApiPagination;
 use Illuminate\Http\JsonResponse;
 
-class WarehouseController extends Controller
+/**
+ * Controller CRUD kho.
+ *
+ * Kho là một chiều dữ liệu bắt buộc của bài toán tồn kho.
+ * Vì vậy mọi thao tác đọc ghi đều phải đi đúng business scope.
+ */
+class WarehouseController extends ApiController
 {
     use HasApiPagination;
 
@@ -19,8 +24,12 @@ class WarehouseController extends Controller
     {
     }
 
+    /**
+     * Danh sách kho trong business hiện tại.
+     */
     public function index(BusinessIndexRequest $request): JsonResponse
     {
+        // Service xử lý tenant scope và filter; controller chỉ lo phần phân trang và response.
         [, $query] = $this->warehouseService->paginate(array_merge(
             $request->validated(),
             $request->only($this->warehouseService->searchableFilters()),
@@ -34,6 +43,9 @@ class WarehouseController extends Controller
         );
     }
 
+    /**
+     * Lấy chi tiết một kho.
+     */
     public function show(BusinessActionRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(
@@ -44,6 +56,9 @@ class WarehouseController extends Controller
         );
     }
 
+    /**
+     * Tạo kho mới.
+     */
     public function store(StoreWarehouseRequest $request): JsonResponse
     {
         return $this->successResponse(
@@ -54,6 +69,9 @@ class WarehouseController extends Controller
         );
     }
 
+    /**
+     * Cập nhật thông tin kho.
+     */
     public function update(UpdateWarehouseRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(
@@ -64,6 +82,9 @@ class WarehouseController extends Controller
         );
     }
 
+    /**
+     * Xóa kho trong business hiện tại.
+     */
     public function destroy(BusinessActionRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(

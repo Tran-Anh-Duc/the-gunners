@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Ledger tồn kho.
+ *
+ * Mỗi bien dòng nhập/xuất/điều chỉnh deu phải di qua bang nay,
+ * để sau này có thể rebuild tồn kho va audit lich su.
+ */
 class InventoryMovement extends Model
 {
     const UPDATED_AT = null;
@@ -37,21 +43,25 @@ class InventoryMovement extends Model
 
     public function business(): BelongsTo
     {
+        // Movement nay thuộc business nào.
         return $this->belongsTo(Business::class);
     }
 
     public function warehouse(): BelongsTo
     {
+        // Bien dòng xay ra tai kho nào.
         return $this->belongsTo(Warehouse::class);
     }
 
     public function product(): BelongsTo
     {
+        // Bien dòng của sản phẩm nào.
         return $this->belongsTo(Product::class);
     }
 
     public function creator(): BelongsTo
     {
+        // User tạo movement/chứng từ gốc.
         return $this->belongsTo(User::class, 'created_by');
     }
 }

@@ -33,6 +33,7 @@ class CoreInventoryFlowTest extends TestCase
     {
         parent::setUp();
 
+        // Bộ test này bỏ qua JWT thật để tập trung xác nhận luồng nghiệp vụ và dữ liệu tồn kho.
         $this->withoutMiddleware(JwtMiddleware::class);
 
         $this->business = Business::query()->create([
@@ -93,9 +94,10 @@ class CoreInventoryFlowTest extends TestCase
 
     public function test_it_creates_a_product_in_the_current_business_scope(): void
     {
+        // Mục tiêu: bảo đảm API tạo sản phẩm luôn tự gắn đúng business hiện tại.
         $response = $this->postJson('/api/products', [
             'sku' => 'SKU-TEST-001',
-            'name' => 'San pham test',
+            'name' => 'Sản phẩm test',
             'unit_id' => $this->unit->id,
             'cost_price' => 10000,
             'sale_price' => 15000,
@@ -113,6 +115,7 @@ class CoreInventoryFlowTest extends TestCase
 
     public function test_stock_in_creates_inventory_movements_and_current_stock(): void
     {
+        // Mục tiêu: khi phiếu nhập được confirm thì ledger và current stock phải cùng được cập nhật.
         $product = $this->createProduct();
 
         $response = $this->postJson('/api/stock-in', [
@@ -148,18 +151,19 @@ class CoreInventoryFlowTest extends TestCase
 
     public function test_stock_adjustment_updates_current_stock_from_counted_quantity(): void
     {
+        // Mục tiêu: số lượng kiểm thực tế (`counted_qty`) phải trở thành số tồn cuối cùng sau điều chỉnh.
         $product = $this->createProduct();
         $this->seedConfirmedStockIn($product, 10, 10000);
 
         $response = $this->postJson('/api/stock-adjustments', [
             'warehouse_id' => $this->warehouse->id,
             'status' => 'confirmed',
-            'reason' => 'Kiem kho',
+            'reason' => 'Kiểm kho',
             'items' => [
                 [
                     'product_id' => $product->id,
                     'counted_qty' => 8,
-                    'note' => 'That thoat 2 san pham',
+                    'note' => 'That thoat 2 sản phẩm',
                 ],
             ],
         ]);
@@ -179,6 +183,7 @@ class CoreInventoryFlowTest extends TestCase
 
     public function test_confirming_and_cancelling_a_draft_stock_in_updates_inventory(): void
     {
+        // Mục tiêu: draft chưa ảnh hưởng tồn; confirm thì sinh movement; cancel thì gỡ movement ra khỏi ledger.
         $product = $this->createProduct();
 
         $createResponse = $this->postJson('/api/stock-in', [
@@ -224,6 +229,7 @@ class CoreInventoryFlowTest extends TestCase
 
     public function test_confirming_stock_out_uses_moving_average_cost_and_updates_current_stock(): void
     {
+        // Mục tiêu: xuất kho phải lấy giá vốn bình quân hiện tại thay vì tin cố định vào `cost_price`.
         $product = $this->createProduct();
         $this->seedConfirmedStockIn($product, 10, 10000);
 
@@ -389,7 +395,7 @@ class CoreInventoryFlowTest extends TestCase
             'business_id' => $this->business->id,
             'unit_id' => $this->unit->id,
             'sku' => 'SKU-'.Str::upper(Str::random(6)),
-            'name' => 'San pham test',
+            'name' => 'Sản phẩm test',
             'product_type' => 'simple',
             'track_inventory' => true,
             'cost_price' => 10000,

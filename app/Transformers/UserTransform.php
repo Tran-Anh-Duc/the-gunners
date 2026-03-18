@@ -5,6 +5,12 @@ namespace App\Transformers;
 use App\Models\User;
 use League\Fractal\TransformerAbstract;
 
+/**
+ * Transformer user.
+ *
+ * Gộp thông tin user hệ thống và membership trong business hiện tại
+ * thành một payload gọn để frontend dùng trực tiếp.
+ */
 class UserTransform extends TransformerAbstract
 {
     protected array $defaultIncludes = [];
@@ -13,6 +19,7 @@ class UserTransform extends TransformerAbstract
 
     public function transform(User $entry): array
     {
+        // Controller và service đã eager load membership đúng business để transformer không phải query thêm.
         $membership = $entry->businessMemberships->first();
         $business = $membership?->business;
 

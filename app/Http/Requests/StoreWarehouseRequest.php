@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate tạo mới kho.
+ *
+ * cođể kho phải unique trong business để để trả cuu va sinh chứng từ sau này.
+ */
 class StoreWarehouseRequest extends BaseBusinessRequest
 {
     public function rules(): array

@@ -4,8 +4,20 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate cập nhật user và membership.
+ *
+ * Email vẫn unique trên toàn hệ thống,
+ * còn `role`, `status`, `is_owner` là dữ liệu theo business.
+ */
 class UpdateUserRequest extends BaseBusinessRequest
 {
+    /**
+     * Rule cập nhật user/membership.
+     *
+     * Email vẫn unique trên bảng `users` toàn hệ thống.
+     * `role/status/is_owner` là dữ liệu của membership trong business.
+     */
     public function rules(): array
     {
         return [

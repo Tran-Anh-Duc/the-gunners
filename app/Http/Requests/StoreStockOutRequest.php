@@ -4,8 +4,24 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate tạo phiếu xuất kho.
+ *
+ * `quantity` là bắt buộc,
+ * còn `unit_price` có thể để hệ thống lấy mặc định từ product.
+ */
 class StoreStockOutRequest extends BaseBusinessRequest
 {
+    /**
+     * Rule tạo phiếu xuất kho.
+     *
+     * Giải thích field:
+     * - `warehouse_id`: kho xuất
+     * - `order_id`: đơn hàng liên quan nếu có
+     * - `customer_id`: khách nhận hàng nếu có
+     * - `items.*.quantity`: số lượng xuất
+     * - `items.*.unit_price`: giá bán trên chứng từ xuất
+     */
     public function rules(): array
     {
         $businessId = $this->integer('business_id');

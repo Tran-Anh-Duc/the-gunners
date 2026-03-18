@@ -6,18 +6,22 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
+/**
+ * Request validate login public.
+ *
+ * Không dùng business scope vì login xảy ra trước khi hệ thống biết user đang vào business nào.
+ */
 class LoginUserRequest extends BaseFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Rule login tối thiểu:
+     * - `email`: để tìm user hệ thống
+     * - `password`: để xác thực
      *
      * @return array<string, ValidationRule|array|string>
      */
@@ -34,6 +38,9 @@ class LoginUserRequest extends BaseFormRequest
         ];
     }
 
+    /**
+     * Message lỗi thân thiện cho frontend.
+     */
     public function messages(): array
     {
         return [
@@ -43,6 +50,4 @@ class LoginUserRequest extends BaseFormRequest
             'password.required' => __('validation.user.password.required'),
         ];
     }
-
-
 }

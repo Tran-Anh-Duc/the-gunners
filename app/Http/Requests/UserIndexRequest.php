@@ -2,8 +2,17 @@
 
 namespace App\Http\Requests;
 
+/**
+ * Validate bộ lọc danh sách user.
+ *
+ * Cho phép lọc cả theo field user (`name`, `email`, `phone`)
+ * và field membership (`role`, `membership_status`).
+ */
 class UserIndexRequest extends BaseBusinessRequest
 {
+    /**
+     * Rule cho màn hình danh sách user trong business hiện tại.
+     */
     public function rules(): array
     {
         return [

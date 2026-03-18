@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
-class DistributorController extends Controller
+class DistributorController extends BaseController
 {
     public function index(): View
     {

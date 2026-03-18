@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate cập nhật phiếu thu/chi.
+ *
+ * amount đúng `sometimes` để cho phep update partial tren document đã ton tai.
+ */
 class UpdatePaymentRequest extends BaseBusinessRequest
 {
     public function rules(): array

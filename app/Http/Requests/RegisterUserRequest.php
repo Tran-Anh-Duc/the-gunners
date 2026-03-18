@@ -4,6 +4,12 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 
+/**
+ * Request validate register public.
+ *
+ * Co y chỉ mo cac field toi thieu để tránh public API ghi nham field quản trị
+ * nhu role, is_owner, business_id...
+ */
 class RegisterUserRequest extends BaseFormRequest
 {
     public function authorize(): bool
@@ -11,6 +17,16 @@ class RegisterUserRequest extends BaseFormRequest
         return true;
     }
 
+    /**
+     * Rule register public.
+     *
+     * Chi mo 3 field:
+     * - name
+     * - email
+     * - password
+     *
+     * Vi toan bo field quản trị/business se do AuthService từ sinh.
+     */
     public function rules(): array
     {
         return [
@@ -33,6 +49,9 @@ class RegisterUserRequest extends BaseFormRequest
         ];
     }
 
+    /**
+     * Message lỗi custom cho màn hình register.
+     */
     public function messages(): array
     {
         return [

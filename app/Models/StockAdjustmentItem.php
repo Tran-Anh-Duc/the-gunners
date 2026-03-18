@@ -5,6 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Chi tiết adjustment.
+ *
+ * Gom 3 giá tri chinh:
+ * - expected_qty: ton hệ thống
+ * - counted_qty: ton thực tế
+ * - difference_qty: phan chênh lệch dua vao ledger
+ */
 class StockAdjustmentItem extends Model
 {
     protected $fillable = [
@@ -34,16 +42,19 @@ class StockAdjustmentItem extends Model
 
     public function business(): BelongsTo
     {
+        // Dong adjustment thuộc business nào.
         return $this->belongsTo(Business::class);
     }
 
     public function stockAdjustment(): BelongsTo
     {
+        // Dong nay nằm trong chứng từ adjustment nào.
         return $this->belongsTo(StockAdjustment::class);
     }
 
     public function product(): BelongsTo
     {
+        // Sản phẩm được kiểm kho/điều chỉnh.
         return $this->belongsTo(Product::class);
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\BusinessActionRequest;
 use App\Http\Requests\BusinessIndexRequest;
 use App\Http\Requests\StoreCustomerRequest;
@@ -11,7 +10,15 @@ use App\Services\CustomerService;
 use App\Traits\HasApiPagination;
 use Illuminate\Http\JsonResponse;
 
-class CustomerController extends Controller
+/**
+ * Controller CRUD khách hàng.
+ *
+ * Controller này không tự query model hay xử lý nghiệp vụ:
+ * - request chịu trách nhiệm validate đầu vào;
+ * - service xử lý business scope và thao tác dữ liệu;
+ * - controller chỉ điều phối paginate và trả JSON response.
+ */
+class CustomerController extends ApiController
 {
     use HasApiPagination;
 
@@ -19,8 +26,17 @@ class CustomerController extends Controller
     {
     }
 
+    /**
+     * Danh sách khách hàng trong business hiện tại.
+     *
+     * Cách xử lý:
+     * - lấy filter đã validate từ request;
+     * - chuyển phần tìm kiếm theo tên, điện thoại, email cho service;
+     * - paginate kết quả và trả về response chuẩn.
+     */
     public function index(BusinessIndexRequest $request): JsonResponse
     {
+        // Controller chỉ dựng response; query đã được service khóa theo đúng business.
         [, $query] = $this->customerService->paginate(array_merge(
             $request->validated(),
             $request->only($this->customerService->searchableFilters()),
@@ -34,6 +50,11 @@ class CustomerController extends Controller
         );
     }
 
+    /**
+     * Lấy chi tiết một khách hàng.
+     *
+     * Bản ghi chỉ được đọc nếu thuộc đúng business hiện tại.
+     */
     public function show(BusinessActionRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(
@@ -44,8 +65,15 @@ class CustomerController extends Controller
         );
     }
 
+    /**
+     * Tạo khách hàng mới trong business hiện tại.
+     *
+     * `business_id` thực tế sẽ do service và repository suy ra hoặc gắn vào,
+     * không để frontend tự quyết định bản ghi thuộc tenant nào.
+     */
     public function store(StoreCustomerRequest $request): JsonResponse
     {
+        // Luồng tạo mới giữ mỏng ở controller để toàn bộ nghiệp vụ tập trung trong service.
         return $this->successResponse(
             'Created successfully.',
             'create_success',
@@ -54,6 +82,9 @@ class CustomerController extends Controller
         );
     }
 
+    /**
+     * Cập nhật khách hàng hiện có.
+     */
     public function update(UpdateCustomerRequest $request, int $id): JsonResponse
     {
         return $this->successResponse(
@@ -64,8 +95,14 @@ class CustomerController extends Controller
         );
     }
 
+    /**
+     * Xóa khách hàng trong business hiện tại.
+     *
+     * Điều này giúp tránh thao tác nhầm sang dữ liệu của tenant khác.
+     */
     public function destroy(BusinessActionRequest $request, int $id): JsonResponse
     {
+        // Service sẽ đảm bảo thao tác xóa chỉ diễn ra trên dữ liệu cùng business.
         return $this->successResponse(
             'Deleted successfully.',
             'delete_success',

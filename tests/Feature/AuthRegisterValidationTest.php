@@ -17,8 +17,15 @@ class AuthRegisterValidationTest extends TestCase
         parent::tearDown();
     }
 
+    /**
+     * Bảo đảm endpoint register public chỉ chuyển các field công khai xuống service.
+     *
+     * Điều này giúp khóa contract rằng người dùng public không thể gửi kèm
+     * các field quản trị như role, ownership hoặc trạng thái membership.
+     */
     public function test_register_only_passes_public_fields_to_the_repository(): void
     {
+        // Test này khóa contract của luồng register public.
         $service = Mockery::mock(AuthService::class);
         $service->shouldReceive('register')
             ->once()

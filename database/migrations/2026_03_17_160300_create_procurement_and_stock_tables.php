@@ -6,8 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Tạo nhóm bảng nhập kho, xuất kho và kiểm kho.
+     *
+     * Các bảng này mô hình hóa toàn bộ chứng từ tác động trực tiếp tới tồn:
+     * - `stock_in` và `stock_in_items`;
+     * - `stock_out` và `stock_out_items`;
+     * - `stock_adjustments` và `stock_adjustment_items`.
+     */
     public function up(): void
     {
+        // `stock_in` ghi nhận nhập kho từ nhà cung cấp hoặc các nguồn nhập khác.
         Schema::create('stock_in', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -47,6 +56,7 @@ return new class extends Migration
             $table->index(['business_id', 'product_id']);
         });
 
+        // `stock_out` là chứng từ xuất kho, có thể gắn với đơn hàng.
         Schema::create('stock_out', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -86,6 +96,7 @@ return new class extends Migration
             $table->index(['business_id', 'product_id']);
         });
 
+        // `stock_adjustments` dùng cho kiểm kho hoặc lệch kho, rất cần thiết ngay cả với MVP.
         Schema::create('stock_adjustments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -103,6 +114,7 @@ return new class extends Migration
             $table->index(['business_id', 'status']);
         });
 
+        // Lưu cả expected và counted để sau này audit được chênh lệch tồn kho.
         Schema::create('stock_adjustment_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -125,6 +137,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Xóa các bảng chi tiết trước rồi mới xóa bảng header.
         Schema::dropIfExists('stock_adjustment_items');
         Schema::dropIfExists('stock_adjustments');
         Schema::dropIfExists('stock_out_items');

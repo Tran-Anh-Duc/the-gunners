@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
+/**
+ * Validate cập nhật chứng từ kiểm kho/điều chỉnh tồn.
+ *
+ * Hỗ trợ update partial va item replacement cho MVP.
+ */
 class UpdateStockAdjustmentRequest extends BaseBusinessRequest
 {
     public function rules(): array

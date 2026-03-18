@@ -6,8 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Tạo nhóm bảng catalog theo từng business.
+     *
+     * Đây là lớp dữ liệu danh mục làm nền cho toàn bộ chứng từ nghiệp vụ:
+     * - đơn vị tính;
+     * - kho;
+     * - khách hàng;
+     * - nhà cung cấp;
+     * - sản phẩm.
+     */
     public function up(): void
     {
+        // Catalog cơ bản cho từng business.
         Schema::create('units', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -69,6 +80,7 @@ return new class extends Migration
             $table->index(['business_id', 'phone']);
         });
 
+        // MVP giữ product ở mức simple, chưa mở variant để tránh phình schema quá sớm.
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->cascadeOnDelete();
@@ -94,6 +106,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Rollback theo thứ tự ngược để giữ tính an toàn cho khóa ngoại.
         Schema::dropIfExists('products');
         Schema::dropIfExists('suppliers');
         Schema::dropIfExists('customers');

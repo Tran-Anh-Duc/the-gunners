@@ -27,8 +27,25 @@ class StockOutService extends BaseBusinessCrudService
         $this->repository = $stockOutRepository;
     }
 
+    /**
+     * Tạo phiếu xuất kho.
+     *
+     * @param  array<string, mixed>  $data
+     * @return Model
+     *
+     * Service sẽ kiểm tra warehouse, order, customer theo business,
+     * dựng snapshot item rồi sync ledger để trừ tồn và tính giá vốn moving average.
+     */
     public function create(array $data): Model
     {
+        /**
+         * Tạo chứng từ xuất kho.
+         *
+         * Sau khi tạo item và header, service gọi ledger để:
+         * - trừ tồn;
+         * - tính giá vốn bình quân;
+         * - cập nhật `current_stocks`.
+         */
         $businessId = $this->resolveBusinessId($data);
 
         return DB::transaction(function () use ($businessId, $data) {
@@ -55,6 +72,7 @@ class StockOutService extends BaseBusinessCrudService
 
             $this->stockOutRepository->replaceItems($stockOut, $businessId, $itemsPayload);
 
+            // Stock-out luôn đi qua ledger để tồn kho và giá vốn được tính theo cùng một nguồn sự thật.
             $stockOut = $this->stockOutRepository->findForBusiness($businessId, $stockOut->id, ['items.product']);
             $this->inventoryLedgerService->syncStockOut($stockOut);
 
@@ -62,8 +80,19 @@ class StockOutService extends BaseBusinessCrudService
         });
     }
 
+    /**
+     * Cập nhật phiếu xuất kho.
+     *
+     * @param  int  $id
+     * @param  array<string, mixed>  $data
+     * @return Model
+     *
+     * Sau khi cập nhật xong, movement của document sẽ được rebuild lại
+     * để tránh sai tồn hoặc sai giá vốn.
+     */
     public function update(int $id, array $data): Model
     {
+        // Sửa xuất kho luôn phải rebuild movement vì quantity và giá vốn có thể thay đổi theo trạng thái mới.
         $businessId = $this->resolveBusinessId($data);
 
         return DB::transaction(function () use ($businessId, $id, $data) {
@@ -123,12 +152,30 @@ class StockOutService extends BaseBusinessCrudService
         return $this->transitionStatus($id, $data, 'cancelled');
     }
 
+    /**
+     * Chuẩn hóa item xuất kho.
+     *
+     * @param  int  $businessId
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array{0: array<int, array<string, mixed>>, 1: float}
+     *
+     * Lưu ý:
+     * - `unit_price` là giá bán để tính doanh thu trên chứng từ;
+     * - giá vốn xuất thực tế không tính ở đây mà tính trong ledger.
+     */
     protected function buildItems(int $businessId, array $items): array
     {
+        /**
+         * Snapshot item xuất kho.
+         *
+         * `unit_price` là giá bán phục vụ doanh thu,
+         * còn giá vốn thực tế sẽ do `InventoryLedgerService` tính khi confirm.
+         */
         $payloads = [];
         $subtotal = 0;
 
         foreach ($items as $item) {
+            // Nếu frontend không truyền giá bán thì lấy mặc định từ product, nhưng vẫn snapshot lại vào item.
             /** @var Product $product */
             $product = Product::query()->where('business_id', $businessId)->findOrFail($item['product_id']);
             $quantity = (float) $item['quantity'];
@@ -149,11 +196,24 @@ class StockOutService extends BaseBusinessCrudService
         return [$payloads, $subtotal];
     }
 
+    /**
+     * Đổi trạng thái phiếu xuất kho.
+     *
+     * @param  int  $id
+     * @param  array<string, mixed>  $data
+     * @param  string  $status
+     * @return Model
+     *
+     * `confirm()` và `cancel()` đều đi qua đây.
+     * Sau mỗi lần đổi trạng thái, ledger sẽ được sync lại từ đầu.
+     */
     protected function transitionStatus(int $id, array $data, string $status): Model
     {
+        // Trạng thái của chứng từ xuất kho tác động trực tiếp đến tồn hiện tại.
         $businessId = $this->resolveBusinessId($data);
 
         return DB::transaction(function () use ($businessId, $id, $status) {
+            // Khi trạng thái đổi, movement cũ sẽ bị xóa hoặc tạo lại theo trạng thái mới.
             $stockOut = $this->stockOutRepository->findForBusiness($businessId, $id, ['items.product']);
             $this->stockOutRepository->updateRecord($stockOut, ['status' => $status]);
             $stockOut = $this->stockOutRepository->findForBusiness($businessId, $stockOut->id, ['items.product']);
