@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\BusinessUser;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
@@ -30,6 +31,39 @@ class BusinessContext
     }
 
     /**
+     * Resolve membership đang dùng trong request hiện tại.
+     */
+    public function currentMembership(): ?BusinessUser
+    {
+        if (app()->bound('jwt_active_membership')) {
+            /** @var BusinessUser $membership */
+            $membership = app('jwt_active_membership');
+
+            return $membership;
+        }
+
+        $user = $this->currentUser();
+        if (! $user) {
+            return null;
+        }
+
+        if ($user->relationLoaded('activeBusinessMemberships')) {
+            /** @var BusinessUser|null $membership */
+            $membership = $user->activeBusinessMemberships->first();
+
+            return $membership;
+        }
+
+        /** @var BusinessUser|null $membership */
+        $membership = $user->activeBusinessMemberships()
+            ->orderByDesc('is_owner')
+            ->orderBy('id')
+            ->first();
+
+        return $membership;
+    }
+
+    /**
      * Resolve `business_id` dùng cho toàn bộ service layer.
      *
      * @param  int|null  $requestedBusinessId  `business_id` client gửi lên nếu có
@@ -54,6 +88,15 @@ class BusinessContext
          * tự lặp lại cùng một đoạn kiểm tra tenant ở nhiều nơi.
          */
         $user = $this->currentUser();
+        $membership = $this->currentMembership();
+
+        if ($membership) {
+            $membershipBusinessId = (int) $membership->business_id;
+
+            if ($requestedBusinessId === null || $requestedBusinessId === $membershipBusinessId) {
+                return $membershipBusinessId;
+            }
+        }
 
         if ($user) {
             // Nếu client gửi rõ business_id thì bắt buộc user phải có quyền trong business đó.

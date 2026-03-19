@@ -3,6 +3,9 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 
@@ -45,6 +48,10 @@ return Application::configure(basePath: dirname(__DIR__))
             elseif ($e instanceof HttpException) {
                 $statusCode = $e->getStatusCode();
             }
+            // Eloquent not found
+            elseif ($e instanceof ModelNotFoundException) {
+                $statusCode = 404;
+            }
 
             return response()->json([
                 'status' => false,
@@ -57,4 +64,3 @@ return Application::configure(basePath: dirname(__DIR__))
             ], $statusCode);
         });
     })->create();
-

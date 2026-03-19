@@ -28,12 +28,19 @@ class JwtHelper
         return (int) env('JWT_TTL', 7200);
     }
 
-    public static function generấteToken($user)
+    public static function generateToken($user)
     {
         // Token luôn mang theo business hiện tại để middleware và service lấy scope nhanh.
         $membership = $user->relationLoaded('businessMemberships')
             ? $user->businessMemberships->first()
             : $user->activeBusinessMemberships()->first();
+        $businessName = null;
+
+        if ($membership) {
+            $businessName = $membership->relationLoaded('business')
+                ? $membership->business?->name
+                : $membership->business()->value('name');
+        }
 
         $now = time();
         $exp = $now + self::ttl();
@@ -48,6 +55,7 @@ class JwtHelper
                 'id' => $user->id,
                 'email' => $user->email,
                 'business_id' => $membership?->business_id,
+                'business_name' => $businessName,
                 'role' => $membership?->role,
                 'is_owner' => (bool) ($membership?->is_owner ?? false),
             ],

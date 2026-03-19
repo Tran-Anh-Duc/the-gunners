@@ -26,6 +26,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * Seeder dữ liệu demo cho MVP quản lý kho.
@@ -46,24 +47,22 @@ class MvpInventorySeeder extends Seeder
      */
     public function run(): void
     {
-        // Gieo dữ liệu demo trong transaction để nếu lỗi sẽ rollback trọn gói.
-        DB::transaction(function () {
-            $business = $this->seedBusiness();
-            $users = $this->seedUsers();
+        // Với DB remote như Aiven, một transaction quá dài sẽ làm seed rất chậm.
+        $business = $this->seedBusiness();
+        $users = $this->seedUsers();
 
-            $this->resetDemoBusinessData($business->id);
-            $this->seedMemberships($business, $users);
-            $this->seedModules($business);
+        $this->resetDemoBusinessData($business->id);
+        $this->seedMemberships($business, $users);
+        $this->seedModules($business);
 
-            $units = $this->seedUnits($business);
-            $warehouses = $this->seedWarehouses($business);
-            $customers = $this->seedCustomers($business);
-            $suppliers = $this->seedSuppliers($business);
-            $products = $this->seedProducts($business, $units);
+        $units = $this->seedUnits($business);
+        $warehouses = $this->seedWarehouses($business);
+        $customers = $this->seedCustomers($business);
+        $suppliers = $this->seedSuppliers($business);
+        $products = $this->seedProducts($business, $units);
 
-            $documents = $this->seedTransactions($business, $users, $warehouses, $customers, $suppliers, $products);
-            $this->seedInventoryReadModels($business, $users, $warehouses, $products, $documents);
-        });
+        $documents = $this->seedTransactions($business, $users, $warehouses, $customers, $suppliers, $products);
+        $this->seedInventoryReadModels($business, $users, $warehouses, $products, $documents);
     }
 
     /**
@@ -123,6 +122,18 @@ class MvpInventorySeeder extends Seeder
                 'phone' => '0901000102',
                 'is_active' => true,
             ],
+            'staff2' => [
+                'name' => 'Demo Staff 2',
+                'email' => 'staff2@demo-store.local',
+                'phone' => '0901000103',
+                'is_active' => true,
+            ],
+            'support' => [
+                'name' => 'Demo Support',
+                'email' => 'support@demo-store.local',
+                'phone' => '0901000104',
+                'is_active' => true,
+            ],
         ];
 
         foreach ($users as $key => $data) {
@@ -134,6 +145,27 @@ class MvpInventorySeeder extends Seeder
                     'password' => Hash::make('password'),
                     'is_active' => $data['is_active'],
                     'last_login_at' => CarbonImmutable::now()->subDay(),
+                ]
+            );
+
+            if ($user->trashed()) {
+                $user->restore();
+            }
+
+            $users[$key] = $user;
+        }
+
+        for ($index = 1; $index <= 45; $index++) {
+            $key = sprintf('generated_%02d', $index);
+
+            $user = User::withTrashed()->updateOrCreate(
+                ['email' => sprintf('demo-user-%02d@demo-store.local', $index)],
+                [
+                    'name' => sprintf('Demo User %02d', $index),
+                    'phone' => sprintf('0912%06d', $index),
+                    'password' => Hash::make('password'),
+                    'is_active' => true,
+                    'last_login_at' => CarbonImmutable::now()->subHours($index),
                 ]
             );
 
@@ -213,6 +245,39 @@ class MvpInventorySeeder extends Seeder
             'is_owner' => false,
             'joined_at' => $joinedAt->addDays(7),
         ]);
+
+        BusinessUser::query()->create([
+            'business_id' => $business->id,
+            'user_id' => $users['staff2']->id,
+            'role' => 'staff',
+            'status' => 'active',
+            'is_owner' => false,
+            'joined_at' => $joinedAt->addDays(10),
+        ]);
+
+        BusinessUser::query()->create([
+            'business_id' => $business->id,
+            'user_id' => $users['support']->id,
+            'role' => 'manager',
+            'status' => 'active',
+            'is_owner' => false,
+            'joined_at' => $joinedAt->addDays(14),
+        ]);
+
+        $generatedUsers = collect($users)
+            ->except(['owner', 'manager', 'staff', 'staff2', 'support'])
+            ->values();
+
+        foreach ($generatedUsers as $index => $user) {
+            BusinessUser::query()->create([
+                'business_id' => $business->id,
+                'user_id' => $user->id,
+                'role' => ($index + 1) % 6 === 0 ? 'manager' : 'staff',
+                'status' => 'active',
+                'is_owner' => false,
+                'joined_at' => $joinedAt->addDays(20 + $index),
+            ]);
+        }
     }
 
     /**
@@ -255,6 +320,16 @@ class MvpInventorySeeder extends Seeder
                 'name' => 'Hop',
                 'description' => 'Dong gọi theo hop',
             ],
+            'set' => [
+                'code' => 'SET',
+                'name' => 'Bo',
+                'description' => 'Don vì dùng cho combo san pham',
+            ],
+            'roll' => [
+                'code' => 'ROLL',
+                'name' => 'Cuon',
+                'description' => 'Don vì cho vat từ dong goi theo cuon',
+            ],
         ];
 
         foreach ($units as $key => $data) {
@@ -263,6 +338,18 @@ class MvpInventorySeeder extends Seeder
                 'code' => $data['code'],
                 'name' => $data['name'],
                 'description' => $data['description'],
+                'is_active' => true,
+            ]);
+        }
+
+        for ($index = 1; $index <= 16; $index++) {
+            $key = sprintf('generated_%02d', $index);
+
+            $units[$key] = Unit::query()->create([
+                'business_id' => $business->id,
+                'code' => sprintf('U%02d', $index),
+                'name' => sprintf('Don vi %02d', $index),
+                'description' => sprintf('Don vi phu de test filter va pagination %02d', $index),
                 'is_active' => true,
             ]);
         }
@@ -288,6 +375,11 @@ class MvpInventorySeeder extends Seeder
                 'name' => 'Kho đơn online',
                 'address' => 'Tang 2 - 123 Nguyen Trai',
             ],
+            'showroom' => [
+                'code' => 'WH-SHOW',
+                'name' => 'Kho showroom',
+                'address' => 'Mat tien - 123 Nguyen Trai',
+            ],
         ];
 
         foreach ($warehouses as $key => $data) {
@@ -296,6 +388,18 @@ class MvpInventorySeeder extends Seeder
                 'code' => $data['code'],
                 'name' => $data['name'],
                 'address' => $data['address'],
+                'status' => 'active',
+            ]);
+        }
+
+        for ($index = 1; $index <= 7; $index++) {
+            $key = sprintf('branch_%02d', $index);
+
+            $warehouses[$key] = Warehouse::query()->create([
+                'business_id' => $business->id,
+                'code' => sprintf('WH-BR%02d', $index),
+                'name' => sprintf('Kho chi nhanh %02d', $index),
+                'address' => sprintf('%d Le Loi, Ho Chi Minh', 200 + $index),
                 'status' => 'active',
             ]);
         }
@@ -333,6 +437,27 @@ class MvpInventorySeeder extends Seeder
                 'address' => 'Quan 7, Ho Chi Minh',
                 'note' => 'Khach mua lại nhieu lan',
             ],
+            'hieu' => [
+                'name' => 'Le Gia Hieu',
+                'phone' => '0902777666',
+                'email' => 'hieu.customer@example.com',
+                'address' => 'Binh Thanh, Ho Chi Minh',
+                'note' => 'Khach lay hang tai showroom',
+            ],
+            'thao' => [
+                'name' => 'Vo Minh Thao',
+                'phone' => '0902444555',
+                'email' => 'thao.customer@example.com',
+                'address' => 'Tan Binh, Ho Chi Minh',
+                'note' => 'Khach mua combo va phu kien',
+            ],
+            'corporate' => [
+                'name' => 'ABC Office Supplies',
+                'phone' => '02839990001',
+                'email' => 'purchasing@abc-office.local',
+                'address' => 'District 1, Ho Chi Minh',
+                'note' => 'Khach doanh nghiep dat hang dinh ky',
+            ],
         ];
 
         foreach ($customers as $key => $data) {
@@ -343,6 +468,20 @@ class MvpInventorySeeder extends Seeder
                 'email' => $data['email'],
                 'address' => $data['address'],
                 'note' => $data['note'],
+                'is_active' => true,
+            ]);
+        }
+
+        for ($index = 1; $index <= 54; $index++) {
+            $key = sprintf('generated_%02d', $index);
+
+            $customers[$key] = Customer::query()->create([
+                'business_id' => $business->id,
+                'name' => sprintf('Khach Demo %02d', $index),
+                'phone' => sprintf('0933%06d', $index),
+                'email' => sprintf('customer%02d@demo-store.local', $index),
+                'address' => sprintf('%d Tran Hung Dao, Ho Chi Minh', 50 + $index),
+                'note' => sprintf('Khach duoc seed de test danh sach va bo loc #%02d', $index),
                 'is_active' => true,
             ]);
         }
@@ -374,6 +513,22 @@ class MvpInventorySeeder extends Seeder
                 'address' => 'Tan Phu, Ho Chi Minh',
                 'note' => 'Nhà cùng cấp vat từ dòng goi',
             ],
+            'mobileplus' => [
+                'name' => 'Mobile Plus Distribution',
+                'contact_name' => 'Nguyen Tuan',
+                'phone' => '02836668888',
+                'email' => 'sales@mobile-plus.local',
+                'address' => 'District 10, Ho Chi Minh',
+                'note' => 'Nhà cùng cấp linh kien va phu kien trung cap',
+            ],
+            'gadgetworld' => [
+                'name' => 'Gadget World',
+                'contact_name' => 'Tran Y Nhi',
+                'phone' => '02835557777',
+                'email' => 'biz@gadget-world.local',
+                'address' => 'Thu Duc, Ho Chi Minh',
+                'note' => 'Nhà cùng cấp mat kinh va phu kien ban le',
+            ],
         ];
 
         foreach ($suppliers as $key => $data) {
@@ -385,6 +540,21 @@ class MvpInventorySeeder extends Seeder
                 'email' => $data['email'],
                 'address' => $data['address'],
                 'note' => $data['note'],
+                'is_active' => true,
+            ]);
+        }
+
+        for ($index = 1; $index <= 16; $index++) {
+            $key = sprintf('generated_%02d', $index);
+
+            $suppliers[$key] = Supplier::query()->create([
+                'business_id' => $business->id,
+                'name' => sprintf('Supplier Demo %02d', $index),
+                'contact_name' => sprintf('Contact %02d', $index),
+                'phone' => sprintf('0283%06d', 500000 + $index),
+                'email' => sprintf('supplier%02d@demo-store.local', $index),
+                'address' => sprintf('%d Nguyen Van Cu, Ho Chi Minh', 80 + $index),
+                'note' => sprintf('Nha cung cap duoc seed de test danh sach va bo loc #%02d', $index),
                 'is_active' => true,
             ]);
         }
@@ -442,12 +612,58 @@ class MvpInventorySeeder extends Seeder
                 'sale_price' => 69000,
                 'description' => 'Sản phẩm them để upsell',
             ],
+            'case' => [
+                'sku' => 'SKU-CASE-TPU',
+                'name' => 'Op lung TPU trong',
+                'barcode' => '8938501000016',
+                'cost_price' => 18000,
+                'sale_price' => 39000,
+                'description' => 'Op lung bán chay cho don online va showroom',
+            ],
+            'earphone' => [
+                'sku' => 'SKU-EAR-TWS',
+                'name' => 'Tai nghe TWS co ban',
+                'barcode' => '8938501000017',
+                'cost_price' => 95000,
+                'sale_price' => 159000,
+                'description' => 'Tai nghe khong day phan khuc pho thong',
+            ],
+            'glass' => [
+                'sku' => 'SKU-GLASS-2.5D',
+                'name' => 'Kinh cuong luc 2.5D',
+                'barcode' => '8938501000018',
+                'cost_price' => 10000,
+                'sale_price' => 29000,
+                'description' => 'Phu kien gia re de ban kem dien thoai',
+            ],
+            'adapter' => [
+                'sku' => 'SKU-ADAPTER-C2A',
+                'name' => 'Dau chuyen Type-C sang USB-A',
+                'barcode' => '8938501000019',
+                'cost_price' => 45000,
+                'sale_price' => 89000,
+                'description' => 'Dau chuyen dung cho laptop va phu kien',
+            ],
+            'shipping-box' => [
+                'sku' => 'SKU-BOX-SMALL',
+                'name' => 'Hop carton nho',
+                'barcode' => '8938501000020',
+                'cost_price' => 8000,
+                'sale_price' => 16000,
+                'description' => 'Vat tu dong goi cho don hang giao nhanh',
+            ],
         ];
 
         foreach ($products as $key => $data) {
+            $unitId = match ($key) {
+                'bubble-wrap' => $units['roll']->id,
+                'shipping-box' => $units['box']->id,
+                default => $units['pcs']->id,
+            };
+
             $products[$key] = Product::query()->create([
                 'business_id' => $business->id,
-                'unit_id' => $units['pcs']->id,
+                'unit_id' => $unitId,
                 'sku' => $data['sku'],
                 'name' => $data['name'],
                 'barcode' => $data['barcode'],
@@ -457,6 +673,29 @@ class MvpInventorySeeder extends Seeder
                 'sale_price' => $data['sale_price'],
                 'status' => 'active',
                 'description' => $data['description'],
+            ]);
+        }
+
+        $unitPool = array_values($units);
+
+        for ($index = 1; $index <= 90; $index++) {
+            $key = sprintf('generated_%03d', $index);
+            $unit = $unitPool[$index % count($unitPool)];
+            $costPrice = 12000 + ($index * 1700);
+            $salePrice = $costPrice + 12000 + (($index % 5) * 3000);
+
+            $products[$key] = Product::query()->create([
+                'business_id' => $business->id,
+                'unit_id' => $unit->id,
+                'sku' => sprintf('SKU-DEMO-%03d', $index),
+                'name' => sprintf('San pham demo %03d', $index),
+                'barcode' => sprintf('8938502%06d', $index),
+                'product_type' => 'simple',
+                'track_inventory' => true,
+                'cost_price' => $costPrice,
+                'sale_price' => $salePrice,
+                'status' => $index % 12 === 0 ? 'inactive' : 'active',
+                'description' => sprintf('San pham duoc seed de test goi API, paging va bo loc #%03d', $index),
             ]);
         }
 
@@ -489,8 +728,13 @@ class MvpInventorySeeder extends Seeder
         // Các mốc thời gian được tách rõ để lịch sử chứng từ và ledger nhìn tự nhiên hơn.
         $purchaseMainDate = CarbonImmutable::now()->subDays(10)->setTime(9, 0);
         $purchaseOnlineDate = CarbonImmutable::now()->subDays(7)->setTime(10, 30);
+        $showroomPurchaseDate = CarbonImmutable::now()->subDays(5)->setTime(11, 45);
+        $draftStockInDate = CarbonImmutable::now()->subDays(3)->setTime(16, 20);
         $orderDate = CarbonImmutable::now()->subDays(2)->setTime(14, 0);
+        $secondOrderDate = CarbonImmutable::now()->subDay()->setTime(11, 15);
+        $draftOrderDate = CarbonImmutable::now()->subHours(18);
         $adjustmentDate = CarbonImmutable::now()->subDay()->setTime(18, 15);
+        $secondAdjustmentDate = CarbonImmutable::now()->subHours(10);
 
         $stockInMain = StockIn::query()->create([
             'business_id' => $business->id,
@@ -538,6 +782,52 @@ class MvpInventorySeeder extends Seeder
             [$products['stand'], 15, 36000],
         ]);
 
+        $stockInShowroom = StockIn::query()->create([
+            'business_id' => $business->id,
+            'warehouse_id' => $warehouses['showroom']->id,
+            'supplier_id' => $suppliers['mobileplus']->id,
+            'created_by' => $users['support']->id,
+            'stock_in_no' => 'SI-0003',
+            'reference_no' => 'PO-0003',
+            'stock_in_type' => 'purchase',
+            'stock_in_date' => $showroomPurchaseDate,
+            'status' => 'confirmed',
+            'subtotal' => 8625000,
+            'discount_amount' => 125000,
+            'total_amount' => 8500000,
+            'note' => 'Nhap lo hang bo sung cho showroom',
+        ]);
+
+        $this->createStockInItems($stockInShowroom, [
+            [$products['case'], 80, 18000],
+            [$products['earphone'], 35, 95000],
+            [$products['glass'], 150, 10000],
+            [$products['adapter'], 40, 45000],
+            [$products['shipping-box'], 70, 8000],
+        ]);
+
+        $stockInDraft = StockIn::query()->create([
+            'business_id' => $business->id,
+            'warehouse_id' => $warehouses['main']->id,
+            'supplier_id' => $suppliers['gadgetworld']->id,
+            'created_by' => $users['support']->id,
+            'stock_in_no' => 'SI-0004',
+            'reference_no' => 'PO-0004',
+            'stock_in_type' => 'return',
+            'stock_in_date' => $draftStockInDate,
+            'status' => 'draft',
+            'subtotal' => 1260000,
+            'discount_amount' => 0,
+            'total_amount' => 1260000,
+            'note' => 'Phieu nhap dang chờ xác nhận',
+        ]);
+
+        $this->createStockInItems($stockInDraft, [
+            [$products['earphone'], 6, 96000],
+            [$products['adapter'], 8, 47000],
+            [$products['glass'], 30, 10400],
+        ]);
+
         $order = Order::query()->create([
             'business_id' => $business->id,
             'warehouse_id' => $warehouses['online']->id,
@@ -559,6 +849,74 @@ class MvpInventorySeeder extends Seeder
             [$products['cable'], 3, 49000, 0],
             [$products['charger'], 2, 189000, 12000],
             [$products['stand'], 4, 69000, 9000],
+        ]);
+
+        $secondOrder = Order::query()->create([
+            'business_id' => $business->id,
+            'warehouse_id' => $warehouses['showroom']->id,
+            'customer_id' => $customers['quang']->id,
+            'created_by' => $users['support']->id,
+            'order_no' => 'ORD-0002',
+            'order_date' => $secondOrderDate,
+            'status' => 'confirmed',
+            'payment_status' => 'partial',
+            'subtotal' => 1121000,
+            'discount_amount' => 41000,
+            'shipping_amount' => 25000,
+            'total_amount' => 1105000,
+            'paid_amount' => 400000,
+            'note' => 'Don showroom con cong no mot phan',
+        ]);
+
+        $this->createOrderItems($secondOrder, [
+            [$products['case'], 6, 39000, 14000],
+            [$products['earphone'], 3, 159000, 17000],
+            [$products['glass'], 8, 29000, 0],
+            [$products['adapter'], 2, 89000, 10000],
+        ]);
+
+        $draftOrder = Order::query()->create([
+            'business_id' => $business->id,
+            'warehouse_id' => $warehouses['main']->id,
+            'customer_id' => $customers['nhi']->id,
+            'created_by' => $users['staff2']->id,
+            'order_no' => 'ORD-0003',
+            'order_date' => $draftOrderDate,
+            'status' => 'draft',
+            'payment_status' => 'unpaid',
+            'subtotal' => 378000,
+            'discount_amount' => 0,
+            'shipping_amount' => 30000,
+            'total_amount' => 408000,
+            'paid_amount' => 0,
+            'note' => 'Don nhap tu landing page, chua chot',
+        ]);
+
+        $this->createOrderItems($draftOrder, [
+            [$products['powerbank'], 1, 329000, 0],
+            [$products['cable'], 1, 49000, 0],
+        ]);
+
+        $cancelledOrder = Order::query()->create([
+            'business_id' => $business->id,
+            'warehouse_id' => $warehouses['showroom']->id,
+            'customer_id' => $customers['corporate']->id,
+            'created_by' => $users['manager']->id,
+            'order_no' => 'ORD-0004',
+            'order_date' => $secondOrderDate->subHours(4),
+            'status' => 'cancelled',
+            'payment_status' => 'unpaid',
+            'subtotal' => 267000,
+            'discount_amount' => 7000,
+            'shipping_amount' => 20000,
+            'total_amount' => 280000,
+            'paid_amount' => 0,
+            'note' => 'Don doanh nghiep huy do doi dia chi giao hang',
+        ]);
+
+        $this->createOrderItems($cancelledOrder, [
+            [$products['charger'], 1, 189000, 0],
+            [$products['case'], 2, 39000, 7000],
         ]);
 
         $stockOut = StockOut::query()->create([
@@ -583,6 +941,50 @@ class MvpInventorySeeder extends Seeder
             [$products['stand'], 4, 69000],
         ]);
 
+        $stockOutSecond = StockOut::query()->create([
+            'business_id' => $business->id,
+            'warehouse_id' => $warehouses['showroom']->id,
+            'order_id' => $secondOrder->id,
+            'customer_id' => $customers['quang']->id,
+            'created_by' => $users['support']->id,
+            'stock_out_no' => 'SO-0002',
+            'reference_no' => $secondOrder->order_no,
+            'stock_out_type' => 'sale',
+            'stock_out_date' => $secondOrderDate->addHour(),
+            'status' => 'confirmed',
+            'subtotal' => 1121000,
+            'total_amount' => 1121000,
+            'note' => 'Xuất kho cho đơn ORD-0002',
+        ]);
+
+        $this->createStockOutItems($stockOutSecond, [
+            [$products['case'], 6, 39000],
+            [$products['earphone'], 3, 159000],
+            [$products['glass'], 8, 29000],
+            [$products['adapter'], 2, 89000],
+        ]);
+
+        $stockOutDraft = StockOut::query()->create([
+            'business_id' => $business->id,
+            'warehouse_id' => $warehouses['main']->id,
+            'order_id' => $draftOrder->id,
+            'customer_id' => $customers['nhi']->id,
+            'created_by' => $users['staff2']->id,
+            'stock_out_no' => 'SO-0003',
+            'reference_no' => $draftOrder->order_no,
+            'stock_out_type' => 'sale',
+            'stock_out_date' => $draftOrderDate->addHour(),
+            'status' => 'draft',
+            'subtotal' => 378000,
+            'total_amount' => 378000,
+            'note' => 'Phiếu xuất nháp cho đơn ORD-0003',
+        ]);
+
+        $this->createStockOutItems($stockOutDraft, [
+            [$products['powerbank'], 1, 329000],
+            [$products['cable'], 1, 49000],
+        ]);
+
         $adjustment = StockAdjustment::query()->create([
             'business_id' => $business->id,
             'warehouse_id' => $warehouses['main']->id,
@@ -597,6 +999,38 @@ class MvpInventorySeeder extends Seeder
         $this->createStockAdjustmentItems($adjustment, [
             [$products['bubble-wrap'], 120, 115, 15000, 'Xop hoi mat do dem sai'],
             [$products['powerbank'], 25, 26, 210000, 'Tim thay them 1 sản phẩm trong ke'],
+        ]);
+
+        $secondAdjustment = StockAdjustment::query()->create([
+            'business_id' => $business->id,
+            'warehouse_id' => $warehouses['showroom']->id,
+            'created_by' => $users['support']->id,
+            'adjustment_no' => 'ADJ-0002',
+            'adjustment_date' => $secondAdjustmentDate,
+            'reason' => 'Kiểm kho showroom cuoi ca',
+            'status' => 'confirmed',
+            'note' => 'Lech nhe op lung va hop carton',
+        ]);
+
+        $this->createStockAdjustmentItems($secondAdjustment, [
+            [$products['case'], 80, 78, 18000, 'Thieu 2 op lung do tra hang loi'],
+            [$products['shipping-box'], 70, 74, 8000, 'Bo sung them tu kệ dong goi'],
+        ]);
+
+        $draftAdjustment = StockAdjustment::query()->create([
+            'business_id' => $business->id,
+            'warehouse_id' => $warehouses['main']->id,
+            'created_by' => $users['manager']->id,
+            'adjustment_no' => 'ADJ-0003',
+            'adjustment_date' => CarbonImmutable::now()->subHours(2),
+            'reason' => 'Phieu kiem kho cho duyet',
+            'status' => 'draft',
+            'note' => 'Dang dem lai phu kien kho tong',
+        ]);
+
+        $this->createStockAdjustmentItems($draftAdjustment, [
+            [$products['charger'], 40, 39, 120000, 'Thieu tam thoi 1 cu sac khi dem nhanh'],
+            [$products['glass'], 0, 6, 10000, 'Mat hang moi chua chot nhap kho'],
         ]);
 
         $paymentIn = Payment::query()->create([
@@ -650,12 +1084,332 @@ class MvpInventorySeeder extends Seeder
             'note' => 'Thanh toan du cho đơn nhập kho online',
         ]);
 
+        $paymentInSecond = Payment::query()->create([
+            'business_id' => $business->id,
+            'order_id' => $secondOrder->id,
+            'stock_in_id' => null,
+            'customer_id' => $customers['quang']->id,
+            'supplier_id' => null,
+            'created_by' => $users['support']->id,
+            'payment_no' => 'PAY-IN-0002',
+            'direction' => 'in',
+            'method' => 'cash',
+            'status' => 'paid',
+            'amount' => 400000,
+            'payment_date' => $secondOrderDate->addHours(2),
+            'reference_no' => $secondOrder->order_no,
+            'note' => 'Khach dat coc tai showroom',
+        ]);
+
+        $paymentInDraft = Payment::query()->create([
+            'business_id' => $business->id,
+            'order_id' => $draftOrder->id,
+            'stock_in_id' => null,
+            'customer_id' => $customers['nhi']->id,
+            'supplier_id' => null,
+            'created_by' => $users['staff2']->id,
+            'payment_no' => 'PAY-IN-0003',
+            'direction' => 'in',
+            'method' => 'e_wallet',
+            'status' => 'pending',
+            'amount' => 100000,
+            'payment_date' => $draftOrderDate->addHour(),
+            'reference_no' => $draftOrder->order_no,
+            'note' => 'Cho xac nhan giao dich vi dien tu',
+        ]);
+
+        $paymentOutShowroom = Payment::query()->create([
+            'business_id' => $business->id,
+            'order_id' => null,
+            'stock_in_id' => $stockInShowroom->id,
+            'customer_id' => null,
+            'supplier_id' => $suppliers['mobileplus']->id,
+            'created_by' => $users['owner']->id,
+            'payment_no' => 'PAY-OUT-0003',
+            'direction' => 'out',
+            'method' => 'bank_transfer',
+            'status' => 'paid',
+            'amount' => 5000000,
+            'payment_date' => $showroomPurchaseDate->addHours(4),
+            'reference_no' => $stockInShowroom->stock_in_no,
+            'note' => 'Thanh toan dot 1 cho lo hang showroom',
+        ]);
+
+        $paymentOutShowroomPending = Payment::query()->create([
+            'business_id' => $business->id,
+            'order_id' => null,
+            'stock_in_id' => $stockInShowroom->id,
+            'customer_id' => null,
+            'supplier_id' => $suppliers['mobileplus']->id,
+            'created_by' => $users['owner']->id,
+            'payment_no' => 'PAY-OUT-0004',
+            'direction' => 'out',
+            'method' => 'bank_transfer',
+            'status' => 'pending',
+            'amount' => 3500000,
+            'payment_date' => $showroomPurchaseDate->addDays(1),
+            'reference_no' => $stockInShowroom->stock_in_no,
+            'note' => 'Cong no con lai cho nhà cùng cấp showroom',
+        ]);
+
+        $stockIns = [$stockInMain, $stockInOnline, $stockInShowroom, $stockInDraft];
+        $orders = [$order, $secondOrder, $draftOrder, $cancelledOrder];
+        $stockOuts = [$stockOut, $stockOutSecond, $stockOutDraft];
+        $adjustments = [$adjustment, $secondAdjustment, $draftAdjustment];
+        $payments = [
+            $paymentIn,
+            $paymentOutMain,
+            $paymentOutOnline,
+            $paymentInSecond,
+            $paymentInDraft,
+            $paymentOutShowroom,
+            $paymentOutShowroomPending,
+        ];
+
+        $productPool = array_values($products);
+        $warehousePool = array_values($warehouses);
+        $customerPool = array_values($customers);
+        $supplierPool = array_values($suppliers);
+        $userPool = array_values($users);
+
+        for ($index = 1; $index <= 18; $index++) {
+            $warehouse = $warehousePool[$index % count($warehousePool)];
+            $supplier = $supplierPool[$index % count($supplierPool)];
+            $creator = $userPool[$index % count($userPool)];
+            $status = $index <= 12 ? 'confirmed' : 'draft';
+            $stockInDate = CarbonImmutable::now()->subDays(20 - min($index, 19))->setTime(8 + ($index % 9), 10);
+
+            $stockInExtra = StockIn::query()->create([
+                'business_id' => $business->id,
+                'warehouse_id' => $warehouse->id,
+                'supplier_id' => $supplier->id,
+                'created_by' => $creator->id,
+                'stock_in_no' => sprintf('SI-%04d', 4 + $index),
+                'reference_no' => sprintf('PO-%04d', 4 + $index),
+                'stock_in_type' => $index % 5 === 0 ? 'opening' : 'purchase',
+                'stock_in_date' => $stockInDate,
+                'status' => $status,
+                'subtotal' => 0,
+                'discount_amount' => $index % 4 === 0 ? 50000 : 0,
+                'total_amount' => 0,
+                'note' => sprintf('Phieu nhap mo rong #%02d de test danh sach', $index),
+            ]);
+
+            $stockInItems = [];
+            $subtotal = 0;
+
+            for ($itemIndex = 0; $itemIndex < 5; $itemIndex++) {
+                $product = $productPool[(($index - 1) * 5 + $itemIndex) % count($productPool)];
+                $quantity = 8 + (($index + $itemIndex) % 10) * 2;
+                $unitCost = (float) $product->cost_price + (($index + $itemIndex) % 4) * 500;
+                $subtotal += $quantity * $unitCost;
+                $stockInItems[] = [$product, $quantity, $unitCost];
+            }
+
+            $stockInExtra->update([
+                'subtotal' => $subtotal,
+                'total_amount' => $subtotal - (float) $stockInExtra->discount_amount,
+            ]);
+
+            $this->createStockInItems($stockInExtra, $stockInItems);
+            $stockIns[] = $stockInExtra;
+
+            if ($status === 'confirmed' && $index % 2 === 0) {
+                $paidAmount = $index % 4 === 0
+                    ? (float) $stockInExtra->total_amount
+                    : round((float) $stockInExtra->total_amount * 0.55, 2);
+
+                $payments[] = Payment::query()->create([
+                    'business_id' => $business->id,
+                    'order_id' => null,
+                    'stock_in_id' => $stockInExtra->id,
+                    'customer_id' => null,
+                    'supplier_id' => $supplier->id,
+                    'created_by' => $creator->id,
+                    'payment_no' => sprintf('PAY-OUT-%04d', 4 + $index),
+                    'direction' => 'out',
+                    'method' => $index % 3 === 0 ? 'cash' : 'bank_transfer',
+                    'status' => $index % 4 === 0 ? 'paid' : 'pending',
+                    'amount' => $paidAmount,
+                    'payment_date' => $stockInDate->addHours(3),
+                    'reference_no' => $stockInExtra->stock_in_no,
+                    'note' => sprintf('Thanh toan tu dong cho phieu nhap mo rong #%02d', $index),
+                ]);
+            }
+        }
+
+        for ($index = 1; $index <= 18; $index++) {
+            $warehouse = $warehousePool[($index + 1) % count($warehousePool)];
+            $customer = $customerPool[$index % count($customerPool)];
+            $creator = $userPool[($index + 2) % count($userPool)];
+            $status = match ($index % 4) {
+                1 => 'completed',
+                2 => 'confirmed',
+                3 => 'draft',
+                default => 'cancelled',
+            };
+            $orderDateExtra = CarbonImmutable::now()->subDays(12 - min($index, 11))->setTime(9 + ($index % 8), 20);
+
+            $orderExtra = Order::query()->create([
+                'business_id' => $business->id,
+                'warehouse_id' => $warehouse->id,
+                'customer_id' => $customer->id,
+                'created_by' => $creator->id,
+                'order_no' => sprintf('ORD-%04d', 4 + $index),
+                'order_date' => $orderDateExtra,
+                'status' => $status,
+                'payment_status' => 'unpaid',
+                'subtotal' => 0,
+                'discount_amount' => 0,
+                'shipping_amount' => 15000 + (($index % 4) * 5000),
+                'total_amount' => 0,
+                'paid_amount' => 0,
+                'note' => sprintf('Don hang mo rong #%02d de test API', $index),
+            ]);
+
+            $orderItems = [];
+            $subtotal = 0;
+            $discountTotal = 0;
+
+            for ($itemIndex = 0; $itemIndex < 3; $itemIndex++) {
+                $product = $productPool[(($index - 1) * 3 + $itemIndex + 11) % count($productPool)];
+                $quantity = 1 + (($index + $itemIndex) % 4);
+                $unitPrice = (float) $product->sale_price + (($itemIndex + $index) % 3) * 1000;
+                $discountAmount = ($index + $itemIndex) % 5 === 0 ? 2000 : 0;
+                $subtotal += $quantity * $unitPrice;
+                $discountTotal += $discountAmount;
+                $orderItems[] = [$product, $quantity, $unitPrice, $discountAmount];
+            }
+
+            $paidAmount = match ($status) {
+                'completed' => $subtotal - $discountTotal + (float) $orderExtra->shipping_amount,
+                'confirmed' => round(($subtotal - $discountTotal + (float) $orderExtra->shipping_amount) * 0.4, 2),
+                default => 0,
+            };
+
+            $paymentStatus = match ($status) {
+                'completed' => 'paid',
+                'confirmed' => 'partial',
+                default => 'unpaid',
+            };
+
+            $orderExtra->update([
+                'subtotal' => $subtotal,
+                'discount_amount' => $discountTotal,
+                'total_amount' => $subtotal - $discountTotal + (float) $orderExtra->shipping_amount,
+                'paid_amount' => $paidAmount,
+                'payment_status' => $paymentStatus,
+            ]);
+
+            $this->createOrderItems($orderExtra, $orderItems);
+            $orders[] = $orderExtra;
+
+            if (in_array($status, ['completed', 'confirmed'], true)) {
+                $stockOutStatus = $status === 'completed' || $index % 3 !== 0 ? 'confirmed' : 'draft';
+
+                $stockOutExtra = StockOut::query()->create([
+                    'business_id' => $business->id,
+                    'warehouse_id' => $warehouse->id,
+                    'order_id' => $orderExtra->id,
+                    'customer_id' => $customer->id,
+                    'created_by' => $creator->id,
+                    'stock_out_no' => sprintf('SO-%04d', 3 + $index),
+                    'reference_no' => $orderExtra->order_no,
+                    'stock_out_type' => 'sale',
+                    'stock_out_date' => $orderDateExtra->addHour(),
+                    'status' => $stockOutStatus,
+                    'subtotal' => $subtotal,
+                    'total_amount' => $subtotal,
+                    'note' => sprintf('Phieu xuat mo rong cho don #%02d', $index),
+                ]);
+
+                $stockOutItems = collect($orderItems)
+                    ->map(fn (array $item) => [$item[0], $item[1], $item[2]])
+                    ->all();
+
+                $this->createStockOutItems($stockOutExtra, $stockOutItems);
+                $stockOuts[] = $stockOutExtra;
+            }
+
+            if ($status === 'completed' || $status === 'confirmed') {
+                $payments[] = Payment::query()->create([
+                    'business_id' => $business->id,
+                    'order_id' => $orderExtra->id,
+                    'stock_in_id' => null,
+                    'customer_id' => $customer->id,
+                    'supplier_id' => null,
+                    'created_by' => $creator->id,
+                    'payment_no' => sprintf('PAY-IN-%04d', 3 + $index),
+                    'direction' => 'in',
+                    'method' => $index % 2 === 0 ? 'cash' : 'bank_transfer',
+                    'status' => 'paid',
+                    'amount' => $paidAmount,
+                    'payment_date' => $orderDateExtra->addHours(2),
+                    'reference_no' => $orderExtra->order_no,
+                    'note' => sprintf('Thu tien cho don hang mo rong #%02d', $index),
+                ]);
+            } elseif ($status === 'draft' && $index % 3 === 0) {
+                $payments[] = Payment::query()->create([
+                    'business_id' => $business->id,
+                    'order_id' => $orderExtra->id,
+                    'stock_in_id' => null,
+                    'customer_id' => $customer->id,
+                    'supplier_id' => null,
+                    'created_by' => $creator->id,
+                    'payment_no' => sprintf('PAY-IN-%04d', 50 + $index),
+                    'direction' => 'in',
+                    'method' => 'e_wallet',
+                    'status' => 'pending',
+                    'amount' => round((float) $orderExtra->total_amount * 0.2, 2),
+                    'payment_date' => $orderDateExtra->addMinutes(30),
+                    'reference_no' => $orderExtra->order_no,
+                    'note' => sprintf('Dat coc cho don nhap mo rong #%02d', $index),
+                ]);
+            }
+        }
+
+        for ($index = 1; $index <= 10; $index++) {
+            $warehouse = $warehousePool[$index % count($warehousePool)];
+            $creator = $userPool[($index + 3) % count($userPool)];
+            $status = $index <= 7 ? 'confirmed' : 'draft';
+            $adjustmentDateExtra = CarbonImmutable::now()->subDays(8 - min($index, 7))->setTime(17, 5 + $index);
+
+            $adjustmentExtra = StockAdjustment::query()->create([
+                'business_id' => $business->id,
+                'warehouse_id' => $warehouse->id,
+                'created_by' => $creator->id,
+                'adjustment_no' => sprintf('ADJ-%04d', 3 + $index),
+                'adjustment_date' => $adjustmentDateExtra,
+                'reason' => sprintf('Kiem kho bo sung #%02d', $index),
+                'status' => $status,
+                'note' => sprintf('Phieu dieu chinh mo rong #%02d', $index),
+            ]);
+
+            $adjustmentItems = [];
+
+            for ($itemIndex = 0; $itemIndex < 3; $itemIndex++) {
+                $product = $productPool[(($index - 1) * 3 + $itemIndex + 25) % count($productPool)];
+                $expectedQty = 10 + (($index + $itemIndex) % 8) * 3;
+                $differenceQty = match (($index + $itemIndex) % 3) {
+                    0 => -2,
+                    1 => 1,
+                    default => 3,
+                };
+                $countedQty = $expectedQty + $differenceQty;
+                $unitCost = (float) $product->cost_price;
+                $adjustmentItems[] = [$product, $expectedQty, $countedQty, $unitCost, sprintf('Dong kiem kho phu #%02d-%d', $index, $itemIndex + 1)];
+            }
+
+            $this->createStockAdjustmentItems($adjustmentExtra, $adjustmentItems);
+            $adjustments[] = $adjustmentExtra;
+        }
+
         return [
-            'stock_in' => [$stockInMain, $stockInOnline],
-            'order' => $order,
-            'stock_out' => $stockOut,
-            'adjustment' => $adjustment,
-            'payments' => [$paymentIn, $paymentOutMain, $paymentOutOnline],
+            'stock_in' => $stockIns,
+            'orders' => $orders,
+            'stock_out' => $stockOuts,
+            'adjustments' => $adjustments,
+            'payments' => $payments,
         ];
     }
 
@@ -774,6 +1528,10 @@ class MvpInventorySeeder extends Seeder
         $stockBalances = [];
 
         foreach ($documents['stock_in'] as $stockIn) {
+            if ($stockIn->status !== 'confirmed') {
+                continue;
+            }
+
             foreach ($stockIn->items as $item) {
                 InventoryMovement::query()->create([
                     'business_id' => $business->id,
@@ -795,62 +1553,74 @@ class MvpInventorySeeder extends Seeder
             }
         }
 
-        foreach ($documents['stock_out']->items as $item) {
-            InventoryMovement::query()->create([
-                'business_id' => $business->id,
-                'warehouse_id' => $documents['stock_out']->warehouse_id,
-                'product_id' => $item->product_id,
-                'movement_type' => 'stock_out',
-                'source_type' => 'stock_out',
-                'source_id' => $documents['stock_out']->id,
-                'source_code' => $documents['stock_out']->stock_out_no,
-                'quantity_change' => -1 * $item->quantity,
-                'unit_cost' => $item->product->cost_price,
-                'total_cost' => -1 * $item->quantity * $item->product->cost_price,
-                'movement_date' => $documents['stock_out']->stock_out_date,
-                'note' => $documents['stock_out']->note,
-                'created_by' => $users['staff']->id,
-            ]);
+        foreach ($documents['stock_out'] as $stockOut) {
+            if ($stockOut->status !== 'confirmed') {
+                continue;
+            }
 
-            $this->applyStockBalance(
-                $stockBalances,
-                $business->id,
-                $documents['stock_out']->warehouse_id,
-                $item->product_id,
-                -1 * (float) $item->quantity,
-                (float) $item->product->cost_price,
-                $documents['stock_out']->stock_out_date
-            );
+            foreach ($stockOut->items as $item) {
+                InventoryMovement::query()->create([
+                    'business_id' => $business->id,
+                    'warehouse_id' => $stockOut->warehouse_id,
+                    'product_id' => $item->product_id,
+                    'movement_type' => 'stock_out',
+                    'source_type' => 'stock_out',
+                    'source_id' => $stockOut->id,
+                    'source_code' => $stockOut->stock_out_no,
+                    'quantity_change' => -1 * $item->quantity,
+                    'unit_cost' => $item->product->cost_price,
+                    'total_cost' => -1 * $item->quantity * $item->product->cost_price,
+                    'movement_date' => $stockOut->stock_out_date,
+                    'note' => $stockOut->note,
+                    'created_by' => $stockOut->created_by,
+                ]);
+
+                $this->applyStockBalance(
+                    $stockBalances,
+                    $business->id,
+                    $stockOut->warehouse_id,
+                    $item->product_id,
+                    -1 * (float) $item->quantity,
+                    (float) $item->product->cost_price,
+                    $stockOut->stock_out_date
+                );
+            }
         }
 
-        foreach ($documents['adjustment']->items as $item) {
-            $movementType = $item->difference_qty >= 0 ? 'adjustment_in' : 'adjustment_out';
+        foreach ($documents['adjustments'] as $adjustment) {
+            if ($adjustment->status !== 'confirmed') {
+                continue;
+            }
 
-            InventoryMovement::query()->create([
-                'business_id' => $business->id,
-                'warehouse_id' => $documents['adjustment']->warehouse_id,
-                'product_id' => $item->product_id,
-                'movement_type' => $movementType,
-                'source_type' => 'stock_adjustment',
-                'source_id' => $documents['adjustment']->id,
-                'source_code' => $documents['adjustment']->adjustment_no,
-                'quantity_change' => $item->difference_qty,
-                'unit_cost' => $item->unit_cost,
-                'total_cost' => $item->line_total,
-                'movement_date' => $documents['adjustment']->adjustment_date,
-                'note' => $item->note,
-                'created_by' => $users['manager']->id,
-            ]);
+            foreach ($adjustment->items as $item) {
+                $movementType = $item->difference_qty >= 0 ? 'adjustment_in' : 'adjustment_out';
 
-            $this->applyStockBalance(
-                $stockBalances,
-                $business->id,
-                $documents['adjustment']->warehouse_id,
-                $item->product_id,
-                (float) $item->difference_qty,
-                (float) $item->unit_cost,
-                $documents['adjustment']->adjustment_date
-            );
+                InventoryMovement::query()->create([
+                    'business_id' => $business->id,
+                    'warehouse_id' => $adjustment->warehouse_id,
+                    'product_id' => $item->product_id,
+                    'movement_type' => $movementType,
+                    'source_type' => 'stock_adjustment',
+                    'source_id' => $adjustment->id,
+                    'source_code' => $adjustment->adjustment_no,
+                    'quantity_change' => $item->difference_qty,
+                    'unit_cost' => $item->unit_cost,
+                    'total_cost' => $item->line_total,
+                    'movement_date' => $adjustment->adjustment_date,
+                    'note' => $item->note,
+                    'created_by' => $adjustment->created_by,
+                ]);
+
+                $this->applyStockBalance(
+                    $stockBalances,
+                    $business->id,
+                    $adjustment->warehouse_id,
+                    $item->product_id,
+                    (float) $item->difference_qty,
+                    (float) $item->unit_cost,
+                    $adjustment->adjustment_date
+                );
+            }
         }
 
         foreach ($stockBalances as $balance) {

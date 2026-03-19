@@ -83,7 +83,7 @@ class AuthService
             $this->seedDefaultModules($business->id);
 
             return [
-                'access_token' => JwtHelper::generấteToken($user->fresh('businessMemberships')),
+                'access_token' => JwtHelper::generateToken($user->fresh('businessMemberships')),
                 'token_type' => 'bearer',
                 'expires_in' => JwtHelper::ttl(),
             ];
@@ -131,7 +131,7 @@ class AuthService
         $this->userRepository->touchLastLogin($user);
 
         return [
-            'access_token' => JwtHelper::generấteToken($user->fresh('businessMemberships')),
+            'access_token' => JwtHelper::generateToken($user->fresh('businessMemberships')),
             'token_type' => 'bearer',
             'expires_in' => JwtHelper::ttl(),
         ];
@@ -156,14 +156,14 @@ class AuthService
     {
         // Tạo business đầu tiên cho user mới và sinh code để dùng làm tenant key thân thiện.
         $businessName = trim((string) ($data['business_name'] ?? ($user->name.' Shop')));
-        $baseCođể = Str::slug((string) Str::before($user->email, '@'));
-        $baseCođể = $baseCođể !== '' ? $baseCođể : 'shop-'.$user->id;
-        $cođể = $baseCode;
+        $baseCode = Str::slug((string) Str::before($user->email, '@'));
+        $baseCode = $baseCode !== '' ? $baseCode : 'shop-'.$user->id;
+        $code = $baseCode;
         $suffix = 1;
 
         while (Business::query()->where('code', $code)->exists()) {
             $suffix++;
-            $cođể = "{$baseCode}-{$suffix}";
+            $code = "{$baseCode}-{$suffix}";
         }
 
         return Business::query()->create([

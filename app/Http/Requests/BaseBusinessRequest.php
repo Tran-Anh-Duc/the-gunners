@@ -6,6 +6,10 @@ use Illuminate\Validation\Rule;
 
 abstract class BaseBusinessRequest extends BaseFormRequest
 {
+    protected bool $businessIdWasProvidedByClient = false;
+
+    protected bool $businessIdResolvedFromTrustedContext = false;
+
     /**
      * Mọi request business-scoped đều cho phép đi tiếp ở tầng request.
      *
@@ -38,9 +42,19 @@ abstract class BaseBusinessRequest extends BaseFormRequest
          */
         // Tự bổ sung `business_id` để service và repository luôn làm việc trong cùng một phạm vi business.
         $businessId = $this->input('business_id', $this->query('business_id'));
+        $this->businessIdWasProvidedByClient = $businessId !== null;
 
-        if ($businessId === null && app()->bound('jwt_user')) {
-            $businessId = app('jwt_user')->activeBusinessMemberships()->value('business_id');
+        if ($businessId === null) {
+            if (app()->bound('jwt_business_id')) {
+                $businessId = app('jwt_business_id');
+                $this->businessIdResolvedFromTrustedContext = true;
+            } elseif (app()->bound('jwt_active_membership')) {
+                $businessId = app('jwt_active_membership')->business_id;
+                $this->businessIdResolvedFromTrustedContext = true;
+            } elseif (app()->bound('jwt_user')) {
+                $businessId = app('jwt_user')->activeBusinessMemberships()->value('business_id');
+                $this->businessIdResolvedFromTrustedContext = $businessId !== null;
+            }
         }
 
         if ($businessId !== null) {
@@ -63,10 +77,15 @@ abstract class BaseBusinessRequest extends BaseFormRequest
          * tránh lặp lại cùng một đoạn validate tenant scope ở nhiều file.
          */
         // Tất cả request có phạm vi tenant/business đều nên dùng chung rule này.
-        return [
+        $rules = [
             $required ? 'required' : 'nullable',
             'integer',
-            Rule::exists('businesses', 'id'),
         ];
+
+        if ($this->businessIdWasProvidedByClient || ! $this->businessIdResolvedFromTrustedContext) {
+            $rules[] = Rule::exists('businesses', 'id');
+        }
+
+        return $rules;
     }
 }

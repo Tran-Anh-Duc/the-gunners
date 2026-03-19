@@ -62,20 +62,26 @@ class UserRepository extends BaseRepository
          */
         // Query user trong phạm vi một business, đồng thời cho phép filter theo membership.
         $query = User::query()
-            ->whereHas('businessMemberships', function (Builder $membershipQuery) use ($businessId, $filters) {
-                $membershipQuery->where('business_id', $businessId);
+            ->join('business_users as current_membership', function ($join) use ($businessId, $filters) {
+                $join->on('users.id', '=', 'current_membership.user_id')
+                    ->where('current_membership.business_id', '=', $businessId);
 
                 if (! empty($filters['role'])) {
-                    $membershipQuery->where('role', $filters['role']);
+                    $join->where('current_membership.role', '=', $filters['role']);
                 }
 
                 if (! empty($filters['membership_status'])) {
-                    $membershipQuery->where('status', $filters['membership_status']);
+                    $join->where('current_membership.status', '=', $filters['membership_status']);
                 }
             })
-            ->with(['businessMemberships' => function ($membershipQuery) use ($businessId) {
-                $membershipQuery->where('business_id', $businessId)->with('business');
-            }]);
+            ->select([
+                'users.*',
+                'current_membership.business_id as membership_business_id',
+                'current_membership.role as membership_role',
+                'current_membership.status as membership_status',
+                'current_membership.is_owner as membership_is_owner',
+                'current_membership.joined_at as membership_joined_at',
+            ]);
 
         if (! empty($filters['name'])) {
             $query->where('name', 'like', '%'.$filters['name'].'%');
@@ -89,7 +95,7 @@ class UserRepository extends BaseRepository
             $query->where('phone', 'like', '%'.$filters['phone'].'%');
         }
 
-        return $query->orderByDesc('id');
+        return $query->orderByDesc('users.id');
     }
 
     /**

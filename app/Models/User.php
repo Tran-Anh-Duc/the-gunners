@@ -71,9 +71,9 @@ class User extends Authenticatable
     public function hasRole(string $roleName, ?int $businessId = null): bool
     {
         // Kiểm tra role trong phạm vi business cụ thể hoặc membership active đầu tiên.
-        return $this->scopedMembershipQuery($businessId)
-            ->where('role', $roleName)
-            ->exists();
+        $membership = $this->resolveScopedMembership($businessId);
+
+        return $membership?->role === $roleName;
     }
 
     public function hasPermission(string $permissionName, ?int $businessId = null): bool
@@ -84,7 +84,7 @@ class User extends Authenticatable
          * Tạm thời map permission cứng dựa trên role membership
          * để dễ maintain và sẵn sàng thay bằng RBAC sau này.
          */
-        $membership = $this->scopedMembershipQuery($businessId)->first();
+        $membership = $this->resolveScopedMembership($businessId);
 
         if (! $membership) {
             return false;
@@ -153,5 +153,30 @@ class User extends Authenticatable
         }
 
         return $query->orderByDesc('is_owner')->orderBy('id');
+    }
+
+    protected function resolveScopedMembership(?int $businessId = null): ?BusinessUser
+    {
+        if (app()->bound('jwt_active_membership')) {
+            /** @var BusinessUser $membership */
+            $membership = app('jwt_active_membership');
+
+            if ($membership->user_id === $this->id && ($businessId === null || (int) $membership->business_id === $businessId)) {
+                return $membership;
+            }
+        }
+
+        if ($this->relationLoaded('activeBusinessMemberships')) {
+            /** @var \Illuminate\Database\Eloquent\Collection<int, BusinessUser> $memberships */
+            $memberships = $this->getRelation('activeBusinessMemberships');
+
+            if ($businessId !== null) {
+                return $memberships->firstWhere('business_id', $businessId);
+            }
+
+            return $memberships->first();
+        }
+
+        return $this->scopedMembershipQuery($businessId)->first();
     }
 }

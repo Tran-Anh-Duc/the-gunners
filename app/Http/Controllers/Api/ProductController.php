@@ -43,6 +43,7 @@ class ProductController extends ApiController
             $request->only($this->productService->searchableFilters()),
         ));
 
+
         return $this->successResponse(
             'Fetched successfully.',
             'list_success',
