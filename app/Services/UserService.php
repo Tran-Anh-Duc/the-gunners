@@ -137,7 +137,7 @@ class UserService
             }
 
             $userData = $this->extractUserAttributes($data, true);
-
+			
             if (array_key_exists('password', $userData)) {
                 $userData['password'] = Hash::make($userData['password']);
             }
@@ -149,7 +149,7 @@ class UserService
             // Thông tin user và membership là hai lớp dữ liệu khác nhau nên cần update tách biệt.
             $membershipData = Arr::only($data, ['role', 'membership_status', 'is_owner']);
             $normalizedMembership = [];
-
+			
             if (array_key_exists('role', $membershipData)) {
                 $normalizedMembership['role'] = $membershipData['role'];
             }
@@ -259,12 +259,13 @@ class UserService
         // Chỉ lấy những field được phép ghi xuống bảng `users`.
         $fields = ['name', 'email', 'password'];
 
+		// cái $allowManagementFields = true   thì cho phép thay đổi thêm phone . avatar và is_active
         if ($allowManagementFields) {
             $fields = array_merge($fields, ['phone', 'avatar', 'is_active']);
         }
 
         $userData = Arr::only($data, $fields);
-
+		// kiểm tra xem key password có tồn tại hay không , và check giá trị rỗng hay không ,  => mục đích là  để check việc thay đổi mật khẩu
         if (array_key_exists('password', $userData) && blank($userData['password'])) {
             unset($userData['password']);
         }

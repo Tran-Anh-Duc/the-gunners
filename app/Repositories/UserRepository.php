@@ -94,7 +94,6 @@ class UserRepository extends BaseRepository
         if (! empty($filters['phone'])) {
             $query->where('phone', 'like', '%'.$filters['phone'].'%');
         }
-
         return $query->orderByDesc('users.id');
     }
 
