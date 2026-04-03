@@ -16,9 +16,9 @@ class ManagementRoutePermissionTest extends TestCase
     {
         // Các route nhạy cảm phải gắn đúng middleware permission theo action.
         $indexRoute = app('router')->getRoutes()->match(Request::create('/api/users', 'GET'));
-        $storeRoute = app('router')->getRoutes()->match(Request::create('/api/auth/users', 'POST'));
-        $updateRoute = app('router')->getRoutes()->match(Request::create('/api/auth/users/1', 'PUT'));
-        $deleteRoute = app('router')->getRoutes()->match(Request::create('/api/auth/users/1', 'DELETE'));
+        $storeRoute = app('router')->getRoutes()->match(Request::create('/api/users', 'POST'));
+        $updateRoute = app('router')->getRoutes()->match(Request::create('/api/users/1', 'PUT'));
+        $deleteRoute = app('router')->getRoutes()->match(Request::create('/api/users/1', 'DELETE'));
 
         $this->assertContains('permission:users,view', $indexRoute->gatherMiddleware());
         $this->assertContains('permission:users,create', $storeRoute->gatherMiddleware());
@@ -36,11 +36,15 @@ class ManagementRoutePermissionTest extends TestCase
         $storeRoute = app('router')->getRoutes()->match(Request::create('/api/products', 'POST'));
         $updateRoute = app('router')->getRoutes()->match(Request::create('/api/products/1', 'PUT'));
         $deleteRoute = app('router')->getRoutes()->match(Request::create('/api/products/1', 'DELETE'));
+        $categoryStoreRoute = app('router')->getRoutes()->match(Request::create('/api/categories', 'POST'));
+        $categoryDeleteRoute = app('router')->getRoutes()->match(Request::create('/api/categories/1', 'DELETE'));
 
         $this->assertContains('permission:products,view', $indexRoute->gatherMiddleware());
         $this->assertContains('permission:products,create', $storeRoute->gatherMiddleware());
         $this->assertContains('permission:products,update', $updateRoute->gatherMiddleware());
         $this->assertContains('permission:products,delete', $deleteRoute->gatherMiddleware());
+        $this->assertContains('permission:products,create', $categoryStoreRoute->gatherMiddleware());
+        $this->assertContains('permission:products,delete', $categoryDeleteRoute->gatherMiddleware());
     }
 
     /**

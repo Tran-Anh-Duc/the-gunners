@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\BusinessActionRequest;
-use App\Http\Requests\BusinessIndexRequest;
 use App\Http\Requests\StoreWarehouseRequest;
 use App\Http\Requests\UpdateWarehouseRequest;
+use App\Http\Requests\WarehouseIndexRequest;
 use App\Services\WarehouseService;
 use App\Traits\HasApiPagination;
 use Illuminate\Http\JsonResponse;
@@ -27,13 +27,9 @@ class WarehouseController extends ApiController
     /**
      * Danh sách kho trong business hiện tại.
      */
-    public function index(BusinessIndexRequest $request): JsonResponse
+    public function index(WarehouseIndexRequest $request): JsonResponse
     {
-        // Service xử lý tenant scope và filter; controller chỉ lo phần phân trang và response.
-        [, $query] = $this->warehouseService->paginate(array_merge(
-            $request->validated(),
-            $request->only($this->warehouseService->searchableFilters()),
-        ));
+        [, $query] = $this->warehouseService->paginate($request->validated());
 
         return $this->successResponse(
             'Fetched successfully.',

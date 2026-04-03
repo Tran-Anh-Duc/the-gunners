@@ -14,7 +14,7 @@ use App\Support\BusinessContext;
  */
 class InventoryService extends BaseBusinessCrudService
 {
-    protected array $with = ['warehouse', 'product'];
+    protected array $with = ['warehouse', 'product.category'];
 
     /**
      * @param  BusinessContext  $businessContext

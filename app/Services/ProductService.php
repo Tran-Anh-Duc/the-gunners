@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\Unit;
 use App\Repositories\ProductRepository;
 use App\Support\BusinessContext;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ProductService extends BaseBusinessCrudService
 {
-    protected array $with = ['unit'];
+    protected array $with = ['unit', 'category'];
 
     protected array $searchable = ['sku', 'name', 'barcode', 'status'];
 
@@ -29,6 +30,17 @@ class ProductService extends BaseBusinessCrudService
     {
         parent::__construct($businessContext);
         $this->repository = $repository;
+    }
+
+    public function paginate(array $filters): array
+    {
+        [$businessId, $query] = parent::paginate($filters);
+
+        if (! empty($filters['category_id'])) {
+            $query->where('category_id', (int) $filters['category_id']);
+        }
+
+        return [$businessId, $query];
     }
 
     /**
@@ -46,6 +58,7 @@ class ProductService extends BaseBusinessCrudService
     {
         // Sản phẩm bắt buộc phải tham chiếu tới đơn vị tính cùng tenant.
         $this->assertBelongsToBusiness(Unit::class, $businessId, (int) $data['unit_id'], 'unit_id');
+        $this->assertBelongsToBusiness(Category::class, $businessId, isset($data['category_id']) ? (int) $data['category_id'] : null, 'category_id');
 
         return array_merge(parent::payloadForCreate($data, $businessId), [
             'product_type' => $data['product_type'] ?? 'simple',
@@ -69,6 +82,10 @@ class ProductService extends BaseBusinessCrudService
         // Chỉ kiểm tra lại `unit_id` khi request thực sự muốn thay đổi đơn vị tính.
         if (array_key_exists('unit_id', $data)) {
             $this->assertBelongsToBusiness(Unit::class, $businessId, (int) $data['unit_id'], 'unit_id');
+        }
+
+        if (array_key_exists('category_id', $data)) {
+            $this->assertBelongsToBusiness(Category::class, $businessId, $data['category_id'] !== null ? (int) $data['category_id'] : null, 'category_id');
         }
 
         return parent::payloadForUpdate($data, $businessId, $record);

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\BaseBusinessRepository;
+use App\Support\BusinessSequenceGenerator;
 use App\Support\BusinessContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
@@ -260,31 +261,6 @@ abstract class BaseBusinessCrudService
      */
     protected function nextDocumentNumber(string $modelClass, int $businessId, string $numberColumn, string $prefix): string
     {
-        /**
-         * Sinh mã chứng từ theo chiến lược đơn giản cho MVP.
-         *
-         * Cách làm hiện tại:
-         * - đếm số record trong business;
-         * - sinh mã theo dạng `PREFIX-0001`, `PREFIX-0002`;
-         * - nếu đụng mã đã tồn tại thì tăng tiếp đến khi tìm được mã trống.
-         *
-         * Đây chưa phải cơ chế đánh số chống tranh chấp cao,
-         * nhưng dễ hiểu và đủ phù hợp cho giai đoạn MVP.
-         */
-        // Mỗi business có chuỗi số riêng để mã chứng từ dễ đọc và không lẫn tenant.
-        $sequence = $modelClass::query()
-            ->where('business_id', $businessId)
-            ->count() + 1;
-
-        do {
-            $candidate = sprintf('%s-%04d', $prefix, $sequence);
-            $exists = $modelClass::query()
-                ->where('business_id', $businessId)
-                ->where($numberColumn, $candidate)
-                ->exists();
-            $sequence++;
-        } while ($exists);
-
-        return $candidate;
+        return BusinessSequenceGenerator::nextFormatted($modelClass, $businessId, $numberColumn, $prefix);
     }
 }

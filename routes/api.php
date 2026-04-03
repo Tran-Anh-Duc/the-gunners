@@ -1,6 +1,7 @@
 <?php
 	
 	use App\Http\Controllers\Api\AuthController as ApiAuthController;
+	use App\Http\Controllers\Api\CategoryController;
 	use App\Http\Controllers\Api\CustomerController;
 	use App\Http\Controllers\Api\InventoryController;
 	use App\Http\Controllers\Api\OrderController;
@@ -49,6 +50,14 @@
 		Route::get('/{id}', [WarehouseController::class, 'show'])->middleware('permission:inventory,view');
 		Route::put('/{id}', [WarehouseController::class, 'update'])->middleware('permission:inventory,update');
 		Route::delete('/{id}', [WarehouseController::class, 'destroy'])->middleware('permission:inventory,delete');
+	});
+
+	Route::middleware('jwt')->prefix('categories')->group(function () {
+		Route::get('/', [CategoryController::class, 'index'])->middleware('permission:products,view');
+		Route::post('/', [CategoryController::class, 'store'])->middleware('permission:products,create');
+		Route::get('/{id}', [CategoryController::class, 'show'])->middleware('permission:products,view');
+		Route::put('/{id}', [CategoryController::class, 'update'])->middleware('permission:products,update');
+		Route::delete('/{id}', [CategoryController::class, 'destroy'])->middleware('permission:products,delete');
 	});
 	
 	Route::middleware('jwt')->prefix('products')->group(function () {

@@ -29,6 +29,7 @@ class StoreProductRequest extends BaseBusinessRequest
         return [
             'business_id' => $this->businessRules(),
             'unit_id' => ['required', 'integer', Rule::exists('units', 'id')],
+            'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')],
             'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')->where(fn ($query) => $query->where('business_id', $businessId))],
             'name' => ['required', 'string', 'max:255'],
             'barcode' => ['nullable', 'string', 'max:100'],

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\BusinessSequenceGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,8 +14,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Đơn vị tính có scope theo business.
  *
- * Cách làm này cho phép mỗi shop tự định nghĩa mã và tên đơn vị tính
- * theo quy ước riêng của mình mà không va chạm dữ liệu tenant khác.
+ * `name` là nhãn nghiệp vụ để người dùng nhìn thấy, còn `code`
+ * là mã nội bộ do hệ thống tự sinh trong phạm vi từng business.
  */
 class Unit extends Model
 {
@@ -33,6 +34,17 @@ class Unit extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $unit): void {
+            if (! empty($unit->code) || empty($unit->business_id)) {
+                return;
+            }
+
+            $unit->code = BusinessSequenceGenerator::nextFormatted(self::class, (int) $unit->business_id, 'code', 'UNIT');
+        });
     }
 
     public function business(): BelongsTo

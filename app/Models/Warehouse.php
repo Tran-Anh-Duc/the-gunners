@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\BusinessSequenceGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -29,8 +30,26 @@ class Warehouse extends Model
         'code',
         'name',
         'address',
-        'status',
+        'is_active',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $warehouse): void {
+            if (! empty($warehouse->code) || empty($warehouse->business_id)) {
+                return;
+            }
+
+            $warehouse->code = BusinessSequenceGenerator::nextFormatted(self::class, (int) $warehouse->business_id, 'code', 'WH');
+        });
+    }
 
     public function business(): BelongsTo
     {

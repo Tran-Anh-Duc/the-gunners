@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\BusinessActionRequest;
-use App\Http\Requests\BusinessIndexRequest;
+use App\Http\Requests\ProductIndexRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Services\ProductService;
@@ -35,14 +35,9 @@ class ProductController extends ApiController
      * - ProductService::paginate()
      * - service sẽ áp business scope, filter và eager load `unit`
      */
-    public function index(BusinessIndexRequest $request): JsonResponse
+    public function index(ProductIndexRequest $request): JsonResponse
     {
-        // Controller giữ mỏng: lấy filter đã validate rồi chuyển toàn bộ phần xử lý cho service.
-        [, $query] = $this->productService->paginate(array_merge(
-            $request->validated(),
-            $request->only($this->productService->searchableFilters()),
-        ));
-
+        [, $query] = $this->productService->paginate($request->validated());
 
         return $this->successResponse(
             'Fetched successfully.',

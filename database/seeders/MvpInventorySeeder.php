@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Business;
 use App\Models\BusinessModule;
 use App\Models\BusinessUser;
+use App\Models\Category;
 use App\Models\CurrentStock;
 use App\Models\Customer;
 use App\Models\InventoryMovement;
@@ -59,7 +60,8 @@ class MvpInventorySeeder extends Seeder
         $warehouses = $this->seedWarehouses($business);
         $customers = $this->seedCustomers($business);
         $suppliers = $this->seedSuppliers($business);
-        $products = $this->seedProducts($business, $units);
+        $categories = $this->seedCategories($business);
+        $products = $this->seedProducts($business, $units, $categories);
 
         $documents = $this->seedTransactions($business, $users, $warehouses, $customers, $suppliers, $products);
         $this->seedInventoryReadModels($business, $users, $warehouses, $products, $documents);
@@ -201,6 +203,7 @@ class MvpInventorySeeder extends Seeder
         Order::query()->where('business_id', $businessId)->delete();
 
         Product::withTrashed()->where('business_id', $businessId)->forceDelete();
+        Category::withTrashed()->where('business_id', $businessId)->forceDelete();
         Supplier::withTrashed()->where('business_id', $businessId)->forceDelete();
         Customer::withTrashed()->where('business_id', $businessId)->forceDelete();
         Warehouse::withTrashed()->where('business_id', $businessId)->forceDelete();
@@ -311,22 +314,18 @@ class MvpInventorySeeder extends Seeder
     {
         $units = [
             'pcs' => [
-                'code' => 'PCS',
                 'name' => 'Cai',
                 'description' => 'Don vì ban le mặc định',
             ],
             'box' => [
-                'code' => 'BOX',
                 'name' => 'Hop',
                 'description' => 'Dong gọi theo hop',
             ],
             'set' => [
-                'code' => 'SET',
                 'name' => 'Bo',
                 'description' => 'Don vì dùng cho combo san pham',
             ],
             'roll' => [
-                'code' => 'ROLL',
                 'name' => 'Cuon',
                 'description' => 'Don vì cho vat từ dong goi theo cuon',
             ],
@@ -335,7 +334,6 @@ class MvpInventorySeeder extends Seeder
         foreach ($units as $key => $data) {
             $units[$key] = Unit::query()->create([
                 'business_id' => $business->id,
-                'code' => $data['code'],
                 'name' => $data['name'],
                 'description' => $data['description'],
                 'is_active' => true,
@@ -347,7 +345,6 @@ class MvpInventorySeeder extends Seeder
 
             $units[$key] = Unit::query()->create([
                 'business_id' => $business->id,
-                'code' => sprintf('U%02d', $index),
                 'name' => sprintf('Don vi %02d', $index),
                 'description' => sprintf('Don vi phu de test filter va pagination %02d', $index),
                 'is_active' => true,
@@ -366,17 +363,14 @@ class MvpInventorySeeder extends Seeder
     {
         $warehouses = [
             'main' => [
-                'code' => 'WH-MAIN',
                 'name' => 'Kho chinh',
                 'address' => 'Tang tret - 123 Nguyen Trai',
             ],
             'online' => [
-                'code' => 'WH-ONLINE',
                 'name' => 'Kho đơn online',
                 'address' => 'Tang 2 - 123 Nguyen Trai',
             ],
             'showroom' => [
-                'code' => 'WH-SHOW',
                 'name' => 'Kho showroom',
                 'address' => 'Mat tien - 123 Nguyen Trai',
             ],
@@ -385,10 +379,9 @@ class MvpInventorySeeder extends Seeder
         foreach ($warehouses as $key => $data) {
             $warehouses[$key] = Warehouse::query()->create([
                 'business_id' => $business->id,
-                'code' => $data['code'],
                 'name' => $data['name'],
                 'address' => $data['address'],
-                'status' => 'active',
+                'is_active' => true,
             ]);
         }
 
@@ -397,14 +390,53 @@ class MvpInventorySeeder extends Seeder
 
             $warehouses[$key] = Warehouse::query()->create([
                 'business_id' => $business->id,
-                'code' => sprintf('WH-BR%02d', $index),
                 'name' => sprintf('Kho chi nhanh %02d', $index),
                 'address' => sprintf('%d Le Loi, Ho Chi Minh', 200 + $index),
-                'status' => 'active',
+                'is_active' => true,
             ]);
         }
 
         return $warehouses;
+    }
+
+    /**
+     * @return array<string, Category>
+     */
+    protected function seedCategories(Business $business): array
+    {
+        $categories = [
+            'charging' => [
+                'name' => 'Sac va nguon',
+                'description' => 'Phu kien sac, nguon, adapter',
+            ],
+            'audio' => [
+                'name' => 'Am thanh',
+                'description' => 'Tai nghe, loa va phu kien am thanh',
+            ],
+            'protection' => [
+                'name' => 'Bao ve',
+                'description' => 'Op lung, kinh va phu kien bao ve',
+            ],
+            'stand' => [
+                'name' => 'Gia do',
+                'description' => 'Gia do va phu kien trung bay',
+            ],
+            'packing' => [
+                'name' => 'Dong goi',
+                'description' => 'Vat tu dong goi va giao hang',
+            ],
+        ];
+
+        foreach ($categories as $key => $data) {
+            $categories[$key] = Category::query()->create([
+                'business_id' => $business->id,
+                'name' => $data['name'],
+                'description' => $data['description'],
+                'is_active' => true,
+            ]);
+        }
+
+        return $categories;
     }
 
     /**
@@ -569,7 +601,7 @@ class MvpInventorySeeder extends Seeder
      * Tạo danh mục sản phẩm demo.
      * Dữ liệu được chọn để có cả hàng bán chính và vật tư đóng gói.
      */
-    protected function seedProducts(Business $business, array $units): array
+    protected function seedProducts(Business $business, array $units, array $categories): array
     {
         $products = [
             'cable' => [
@@ -661,9 +693,19 @@ class MvpInventorySeeder extends Seeder
                 default => $units['pcs']->id,
             };
 
+            $categoryId = match ($key) {
+                'charger', 'powerbank', 'adapter' => $categories['charging']->id,
+                'earphone' => $categories['audio']->id,
+                'case', 'glass' => $categories['protection']->id,
+                'stand' => $categories['stand']->id,
+                'bubble-wrap', 'shipping-box' => $categories['packing']->id,
+                default => null,
+            };
+
             $products[$key] = Product::query()->create([
                 'business_id' => $business->id,
                 'unit_id' => $unitId,
+                'category_id' => $categoryId,
                 'sku' => $data['sku'],
                 'name' => $data['name'],
                 'barcode' => $data['barcode'],
@@ -677,16 +719,19 @@ class MvpInventorySeeder extends Seeder
         }
 
         $unitPool = array_values($units);
+        $categoryPool = array_values($categories);
 
         for ($index = 1; $index <= 90; $index++) {
             $key = sprintf('generated_%03d', $index);
             $unit = $unitPool[$index % count($unitPool)];
+            $category = $categoryPool[$index % count($categoryPool)];
             $costPrice = 12000 + ($index * 1700);
             $salePrice = $costPrice + 12000 + (($index % 5) * 3000);
 
             $products[$key] = Product::query()->create([
                 'business_id' => $business->id,
                 'unit_id' => $unit->id,
+                'category_id' => $category->id,
                 'sku' => sprintf('SKU-DEMO-%03d', $index),
                 'name' => sprintf('San pham demo %03d', $index),
                 'barcode' => sprintf('8938502%06d', $index),

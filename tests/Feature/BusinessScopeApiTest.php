@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Business;
+use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Unit;
 use App\Models\User;
@@ -59,7 +60,6 @@ class BusinessScopeApiTest extends TestCase
 
         $foreignUnit = Unit::query()->create([
             'business_id' => $foreignBusiness->id,
-            'code' => 'BOX',
             'name' => 'Box',
             'is_active' => true,
         ]);
@@ -68,6 +68,40 @@ class BusinessScopeApiTest extends TestCase
             'sku' => 'SKU-FOREIGN-UNIT',
             'name' => 'Sai business unit',
             'unit_id' => $foreignUnit->id,
+            'cost_price' => 10000,
+            'sale_price' => 15000,
+        ])->assertStatus(422)
+            ->assertJsonPath('message', 'The selected value is invalid for the current business.');
+    }
+
+    public function test_product_creation_rejects_a_category_from_another_business(): void
+    {
+        $foreignBusiness = Business::query()->create([
+            'code' => 'foreign-category-shop',
+            'name' => 'Foreign Category Shop',
+            'email' => 'owner@foreign-category-shop.local',
+            'status' => 'active',
+            'currency_code' => 'VND',
+            'timezone' => 'Asia/Ho_Chi_Minh',
+        ]);
+
+        $localUnit = Unit::query()->create([
+            'business_id' => $this->business->id,
+            'name' => 'Cai',
+            'is_active' => true,
+        ]);
+
+        $foreignCategory = Category::query()->create([
+            'business_id' => $foreignBusiness->id,
+            'name' => 'Phu kien ngoai scope',
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/products', [
+            'sku' => 'SKU-FOREIGN-CATEGORY',
+            'name' => 'Sai business category',
+            'unit_id' => $localUnit->id,
+            'category_id' => $foreignCategory->id,
             'cost_price' => 10000,
             'sale_price' => 15000,
         ])->assertStatus(422)
@@ -135,5 +169,77 @@ class BusinessScopeApiTest extends TestCase
         $this->assertContains('owner@scope-shop.local', $emails);
         $this->assertContains('scoped@scope-shop.local', $emails);
         $this->assertNotContains('foreign@scope-shop.local', $emails);
+    }
+
+    public function test_warehouse_creation_generates_code_when_frontend_does_not_send_one(): void
+    {
+        $response = $this->postJson('/api/warehouses', [
+            'name' => 'Kho tu sinh ma',
+            'address' => 'HCM',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.business_id', $this->business->id)
+            ->assertJsonPath('data.name', 'Kho tu sinh ma')
+            ->assertJsonPath('data.is_active', true);
+
+        $generatedCode = $response->json('data.code');
+
+        $this->assertNotNull($generatedCode);
+        $this->assertStringStartsWith('WH-', $generatedCode);
+
+        $this->assertDatabaseHas('warehouses', [
+            'business_id' => $this->business->id,
+            'code' => $generatedCode,
+            'name' => 'Kho tu sinh ma',
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_warehouse_creation_rejects_manual_code_input(): void
+    {
+        $this->postJson('/api/warehouses', [
+            'code' => 'WH-TAY',
+            'name' => 'Kho khong cho nhap ma',
+        ])->assertStatus(422)
+            ->assertJsonPath('code', 'error_failed')
+            ->assertJsonPath('http_status', 422)
+            ->assertJsonStructure(['data' => ['code']]);
+    }
+
+    public function test_unit_creation_generates_code_when_frontend_does_not_send_one(): void
+    {
+        $response = $this->postJson('/api/units', [
+            'name' => 'Don vi tu sinh ma',
+            'description' => 'Mo ta',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.business_id', $this->business->id)
+            ->assertJsonPath('data.name', 'Don vi tu sinh ma')
+            ->assertJsonPath('data.is_active', true);
+
+        $generatedCode = $response->json('data.code');
+
+        $this->assertNotNull($generatedCode);
+        $this->assertStringStartsWith('UNIT-', $generatedCode);
+
+        $this->assertDatabaseHas('units', [
+            'business_id' => $this->business->id,
+            'code' => $generatedCode,
+            'name' => 'Don vi tu sinh ma',
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_unit_creation_rejects_manual_code_input(): void
+    {
+        $this->postJson('/api/units', [
+            'code' => 'UNIT-TAY',
+            'name' => 'Don vi khong cho nhap ma',
+        ])->assertStatus(422)
+            ->assertJsonPath('code', 'error_failed')
+            ->assertJsonPath('http_status', 422)
+            ->assertJsonStructure(['data' => ['code']]);
     }
 }

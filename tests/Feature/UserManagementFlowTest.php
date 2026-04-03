@@ -46,7 +46,7 @@ class UserManagementFlowTest extends TestCase
 
     public function test_store_creates_a_user_and_membership_in_the_current_business(): void
     {
-        $response = $this->postJson('/api/auth/users', [
+        $response = $this->postJson('/api/users', [
             'name' => 'Staff 01',
             'email' => 'staff01@team-shop.local',
             'password' => 'secret123',
@@ -80,7 +80,7 @@ class UserManagementFlowTest extends TestCase
 
         $this->attachUserToBusiness($user, $this->business->id, role: 'staff', isOwner: false);
 
-        $response = $this->putJson("/api/auth/users/{$user->id}", [
+        $response = $this->putJson("/api/users/{$user->id}", [
             'name' => 'Manager Updated',
             'phone' => '0909123456',
             'role' => 'manager',
@@ -129,7 +129,7 @@ class UserManagementFlowTest extends TestCase
         $this->attachUserToBusiness($user, $this->business->id, role: 'staff', isOwner: false);
         $this->attachUserToBusiness($user, $secondBusiness->id, role: 'manager', isOwner: false);
 
-        $this->deleteJson("/api/auth/users/{$user->id}")
+        $this->deleteJson("/api/users/{$user->id}")
             ->assertOk()
             ->assertJsonPath('data.id', $user->id);
 

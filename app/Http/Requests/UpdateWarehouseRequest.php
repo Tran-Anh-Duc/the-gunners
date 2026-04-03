@@ -2,26 +2,22 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
-
 /**
  * Validate cập nhật kho.
  *
- * status của kho hiện tại giữ o muc active/inactive để MVP để van hanh.
+ * code kho là mã nội bộ; request cập nhật không cho phép đổi bằng tay.
  */
 class UpdateWarehouseRequest extends BaseBusinessRequest
 {
     public function rules(): array
     {
-        $businessId = $this->integer('business_id');
-        $id = (int) $this->route('id');
-
         return [
             'business_id' => $this->businessRules(),
-            'code' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('warehouses', 'code')->ignore($id)->where(fn ($query) => $query->where('business_id', $businessId))],
+            'code' => ['prohibited'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', Rule::in(['active', 'inactive'])],
+            'status' => ['prohibited'],
+            'is_active' => ['nullable', 'boolean'],
         ];
     }
 }

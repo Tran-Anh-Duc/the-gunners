@@ -27,4 +27,21 @@ class UnitService extends BaseBusinessCrudService
         parent::__construct($businessContext);
         $this->repository = $repository;
     }
+
+    /**
+     * Chuẩn hóa payload khi tạo đơn vị tính.
+     *
+     * `code` sẽ do model tự sinh; service chỉ cần đảm bảo các default
+     * hiển thị nhất quán ngay ở response trả về sau khi tạo.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  int  $businessId
+     * @return array<string, mixed>
+     */
+    protected function payloadForCreate(array $data, int $businessId): array
+    {
+        return array_merge(parent::payloadForCreate($data, $businessId), [
+            'is_active' => $data['is_active'] ?? true,
+        ]);
+    }
 }

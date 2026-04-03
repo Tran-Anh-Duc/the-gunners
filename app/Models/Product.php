@@ -26,6 +26,7 @@ class Product extends Model
     protected $fillable = [
         'business_id',
         'unit_id',
+        'category_id',
         'sku',
         'name',
         'barcode',
@@ -56,6 +57,11 @@ class Product extends Model
     {
         // Đơn vị tính mặc định khi nhập, xuất hoặc bán sản phẩm.
         return $this->belongsTo(Unit::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 
     public function orderItems(): HasMany

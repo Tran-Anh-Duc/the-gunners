@@ -63,16 +63,14 @@ class CoreInventoryFlowTest extends TestCase
 
         $this->unit = Unit::query()->create([
             'business_id' => $this->business->id,
-            'code' => 'PCS',
             'name' => 'Cai',
             'is_active' => true,
         ]);
 
         $this->warehouse = Warehouse::query()->create([
             'business_id' => $this->business->id,
-            'code' => 'WH1',
             'name' => 'Kho chinh',
-            'status' => 'active',
+            'is_active' => true,
         ]);
 
         $this->customer = Customer::query()->create([

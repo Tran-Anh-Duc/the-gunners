@@ -2,23 +2,18 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
-
 /**
  * Validate cập nhật đơn vì tinh.
  *
- * Khi update code, rule unique se bo qua chinh record hiện tại.
+ * code đơn vị tính là mã nội bộ; request cập nhật không cho phép đổi bằng tay.
  */
 class UpdateUnitRequest extends BaseBusinessRequest
 {
     public function rules(): array
     {
-        $businessId = $this->integer('business_id');
-        $id = (int) $this->route('id');
-
         return [
             'business_id' => $this->businessRules(),
-            'code' => ['sometimes', 'required', 'string', 'max:20', Rule::unique('units', 'code')->ignore($id)->where(fn ($query) => $query->where('business_id', $businessId))],
+            'code' => ['prohibited'],
             'name' => ['sometimes', 'required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
