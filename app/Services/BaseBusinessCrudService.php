@@ -3,8 +3,9 @@
 	namespace App\Services;
 	
 	use App\Repositories\BaseBusinessRepository;
-	use App\Support\BusinessSequenceGenerator;
 	use App\Support\BusinessContext;
+	use App\Support\BusinessSequenceGenerator;
+	use App\Support\NameSlug;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Validation\ValidationException;
 	
@@ -35,6 +36,16 @@
 		 * giúp các resource CRUD đơn giản không phải lặp lại code filter.
 		 */
 		protected array $searchable = [];
+
+		/**
+		 * Các field text cần đi qua cột slug tương ứng khi tìm kiếm.
+		 */
+		protected array $slugSearchable = [];
+
+		/**
+		 * Các field cần chuẩn hóa trước khi tìm kiếm, ví dụ `code`.
+		 */
+		protected array $normalizedSearchable = [];
 		
 		/**
 		 * @param BusinessContext $businessContext Dung để resolve tenant/business hiện tại
@@ -82,9 +93,23 @@
 		protected function applySearchFilters($query, array $filters): void
 		{
 			foreach ($this->searchableFilters() as $field) {
-				if (!empty($filters[$field])) {
-					$query->where($field, 'like', '%' . $filters[$field] . '%');
+				$value = isset($filters[$field]) ? trim((string) $filters[$field]) : '';
+
+				if ($value === '') {
+					continue;
 				}
+
+				if (in_array($field, $this->normalizedSearchableFilters(), true)) {
+					$this->applyNormalizedSearchFilter($query, $field, $value);
+					continue;
+				}
+
+				if (in_array($field, $this->slugSearchableFilters(), true)) {
+					$this->applySlugSearchFilter($query, $field, $value);
+					continue;
+				}
+
+				$query->where($field, 'like', '%' . $value . '%');
 			}
 		}
 		
@@ -92,6 +117,37 @@
 		{
 			// Cho controller biết những field text nào có thể nhận từ request để truyền vào service.
 			return $this->searchable;
+		}
+
+		protected function slugSearchableFilters(): array
+		{
+			return $this->slugSearchable;
+		}
+
+		protected function normalizedSearchableFilters(): array
+		{
+			return $this->normalizedSearchable;
+		}
+
+		protected function applySlugSearchFilter($query, string $field, string $value): void
+		{
+			$slug = NameSlug::from($value);
+
+			if ($slug === '') {
+				return;
+			}
+
+			$query->where($field . '_slug', 'like', '%' . $slug . '%');
+		}
+
+		protected function applyNormalizedSearchFilter($query, string $field, string $value): void
+		{
+			$normalizedValue = str_replace([' ', '-'], '', $value);
+
+			$query->whereRaw(
+				'REPLACE(REPLACE(' . $field . ', "-", ""), " ", "") LIKE ?',
+				['%' . $normalizedValue . '%']
+			);
 		}
 		
 		/**

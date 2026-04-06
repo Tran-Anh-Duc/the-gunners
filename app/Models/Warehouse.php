@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\BusinessSequenceGenerator;
+use App\Traits\HasNameSlug;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,12 +24,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Warehouse extends Model
 {
-    use SoftDeletes;
+    use HasNameSlug, SoftDeletes;
 
     protected $fillable = [
         'business_id',
         'code',
         'name',
+        'name_slug',
         'address',
         'is_active',
     ];

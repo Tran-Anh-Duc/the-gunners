@@ -23,6 +23,7 @@ use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Support\NameSlug;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -76,7 +77,7 @@ class MvpInventorySeeder extends Seeder
     {
         $business = Business::withTrashed()->updateOrCreate(
             ['code' => 'demo-store'],
-            [
+            $this->withNameSlug([
                 'name' => 'Demo Store',
                 'phone' => '0901000100',
                 'email' => 'owner@demo-store.local',
@@ -85,7 +86,7 @@ class MvpInventorySeeder extends Seeder
                 'status' => 'active',
                 'currency_code' => 'VND',
                 'timezone' => 'Asia/Ho_Chi_Minh',
-            ]
+            ])
         );
 
         if ($business->trashed()) {
@@ -141,13 +142,13 @@ class MvpInventorySeeder extends Seeder
         foreach ($users as $key => $data) {
             $user = User::withTrashed()->updateOrCreate(
                 ['email' => $data['email']],
-                [
+                $this->withNameSlug([
                     'name' => $data['name'],
                     'phone' => $data['phone'],
                     'password' => Hash::make('password'),
                     'is_active' => $data['is_active'],
                     'last_login_at' => CarbonImmutable::now()->subDay(),
-                ]
+                ])
             );
 
             if ($user->trashed()) {
@@ -162,13 +163,13 @@ class MvpInventorySeeder extends Seeder
 
             $user = User::withTrashed()->updateOrCreate(
                 ['email' => sprintf('demo-user-%02d@demo-store.local', $index)],
-                [
+                $this->withNameSlug([
                     'name' => sprintf('Demo User %02d', $index),
                     'phone' => sprintf('0912%06d', $index),
                     'password' => Hash::make('password'),
                     'is_active' => true,
                     'last_login_at' => CarbonImmutable::now()->subHours($index),
-                ]
+                ])
             );
 
             if ($user->trashed()) {
@@ -335,6 +336,7 @@ class MvpInventorySeeder extends Seeder
             $units[$key] = Unit::query()->create([
                 'business_id' => $business->id,
                 'name' => $data['name'],
+                'name_slug' => NameSlug::from($data['name']),
                 'description' => $data['description'],
                 'is_active' => true,
             ]);
@@ -346,6 +348,7 @@ class MvpInventorySeeder extends Seeder
             $units[$key] = Unit::query()->create([
                 'business_id' => $business->id,
                 'name' => sprintf('Don vi %02d', $index),
+                'name_slug' => NameSlug::from(sprintf('Don vi %02d', $index)),
                 'description' => sprintf('Don vi phu de test filter va pagination %02d', $index),
                 'is_active' => true,
             ]);
@@ -380,6 +383,7 @@ class MvpInventorySeeder extends Seeder
             $warehouses[$key] = Warehouse::query()->create([
                 'business_id' => $business->id,
                 'name' => $data['name'],
+                'name_slug' => NameSlug::from($data['name']),
                 'address' => $data['address'],
                 'is_active' => true,
             ]);
@@ -391,6 +395,7 @@ class MvpInventorySeeder extends Seeder
             $warehouses[$key] = Warehouse::query()->create([
                 'business_id' => $business->id,
                 'name' => sprintf('Kho chi nhanh %02d', $index),
+                'name_slug' => NameSlug::from(sprintf('Kho chi nhanh %02d', $index)),
                 'address' => sprintf('%d Le Loi, Ho Chi Minh', 200 + $index),
                 'is_active' => true,
             ]);
@@ -431,6 +436,7 @@ class MvpInventorySeeder extends Seeder
             $categories[$key] = Category::query()->create([
                 'business_id' => $business->id,
                 'name' => $data['name'],
+                'name_slug' => NameSlug::from($data['name']),
                 'description' => $data['description'],
                 'is_active' => true,
             ]);
@@ -496,6 +502,7 @@ class MvpInventorySeeder extends Seeder
             $customers[$key] = Customer::query()->create([
                 'business_id' => $business->id,
                 'name' => $data['name'],
+                'name_slug' => NameSlug::from($data['name']),
                 'phone' => $data['phone'],
                 'email' => $data['email'],
                 'address' => $data['address'],
@@ -510,6 +517,7 @@ class MvpInventorySeeder extends Seeder
             $customers[$key] = Customer::query()->create([
                 'business_id' => $business->id,
                 'name' => sprintf('Khach Demo %02d', $index),
+                'name_slug' => NameSlug::from(sprintf('Khach Demo %02d', $index)),
                 'phone' => sprintf('0933%06d', $index),
                 'email' => sprintf('customer%02d@demo-store.local', $index),
                 'address' => sprintf('%d Tran Hung Dao, Ho Chi Minh', 50 + $index),
@@ -567,6 +575,7 @@ class MvpInventorySeeder extends Seeder
             $suppliers[$key] = Supplier::query()->create([
                 'business_id' => $business->id,
                 'name' => $data['name'],
+                'name_slug' => NameSlug::from($data['name']),
                 'contact_name' => $data['contact_name'],
                 'phone' => $data['phone'],
                 'email' => $data['email'],
@@ -582,6 +591,7 @@ class MvpInventorySeeder extends Seeder
             $suppliers[$key] = Supplier::query()->create([
                 'business_id' => $business->id,
                 'name' => sprintf('Supplier Demo %02d', $index),
+                'name_slug' => NameSlug::from(sprintf('Supplier Demo %02d', $index)),
                 'contact_name' => sprintf('Contact %02d', $index),
                 'phone' => sprintf('0283%06d', 500000 + $index),
                 'email' => sprintf('supplier%02d@demo-store.local', $index),
@@ -708,6 +718,7 @@ class MvpInventorySeeder extends Seeder
                 'category_id' => $categoryId,
                 'sku' => $data['sku'],
                 'name' => $data['name'],
+                'name_slug' => NameSlug::from($data['name']),
                 'barcode' => $data['barcode'],
                 'product_type' => 'simple',
                 'track_inventory' => true,
@@ -734,6 +745,7 @@ class MvpInventorySeeder extends Seeder
                 'category_id' => $category->id,
                 'sku' => sprintf('SKU-DEMO-%03d', $index),
                 'name' => sprintf('San pham demo %03d', $index),
+                'name_slug' => NameSlug::from(sprintf('San pham demo %03d', $index)),
                 'barcode' => sprintf('8938502%06d', $index),
                 'product_type' => 'simple',
                 'track_inventory' => true,
@@ -1721,5 +1733,18 @@ class MvpInventorySeeder extends Seeder
             ? round($stockBalances[$key]['stock_value'] / $currentQty, 2)
             : 0;
         $stockBalances[$key]['last_movement_at'] = $movementDate;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    protected function withNameSlug(array $attributes): array
+    {
+        if (isset($attributes['name'])) {
+            $attributes['name_slug'] = NameSlug::from((string) $attributes['name']);
+        }
+
+        return $attributes;
     }
 }

@@ -22,6 +22,8 @@ class ProductService extends BaseBusinessCrudService
 
     protected array $searchable = ['sku', 'name', 'barcode', 'status'];
 
+    protected array $slugSearchable = ['name'];
+
     /**
      * @param  BusinessContext  $businessContext
      * @param  ProductRepository  $repository

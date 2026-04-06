@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasNameSlug;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,11 +18,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Supplier extends Model
 {
-    use SoftDeletes;
+    use HasNameSlug, SoftDeletes;
 
     protected $fillable = [
         'business_id',
         'name',
+        'name_slug',
         'contact_name',
         'phone',
         'email',

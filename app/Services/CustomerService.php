@@ -19,6 +19,8 @@ class CustomerService extends BaseBusinessCrudService
      */
     protected array $searchable = ['name', 'phone', 'email'];
 
+    protected array $slugSearchable = ['name'];
+
     /**
      * @param  BusinessContext  $businessContext
      * @param  CustomerRepository  $repository

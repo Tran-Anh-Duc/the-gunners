@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\BusinessUser;
 use App\Models\User;
+use App\Support\NameSlug;
 use Illuminate\Database\Eloquent\Builder;
 
 class UserRepository extends BaseRepository
@@ -84,7 +85,11 @@ class UserRepository extends BaseRepository
             ]);
 
         if (! empty($filters['name'])) {
-            $query->where('name', 'like', '%'.$filters['name'].'%');
+            $slug = NameSlug::from((string) $filters['name']);
+
+            if ($slug !== '') {
+                $query->where('name_slug', 'like', '%'.$slug.'%');
+            }
         }
 
         if (! empty($filters['email'])) {

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\InventoryRepository;
 use App\Support\BusinessContext;
+use App\Support\NameSlug;
 
 /**
  * Service doc tồn kho hiện tại.
@@ -58,7 +59,13 @@ class InventoryService extends BaseBusinessCrudService
 
         if (! empty($filters['product_name'])) {
             $query->whereHas('product', function ($productQuery) use ($filters) {
-                $productQuery->where('name', 'like', '%'.$filters['product_name'].'%');
+                $slug = NameSlug::from((string) $filters['product_name']);
+
+                if ($slug === '') {
+                    return;
+                }
+
+                $productQuery->where('name_slug', 'like', '%'.$slug.'%');
             });
         }
 

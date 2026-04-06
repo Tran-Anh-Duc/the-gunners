@@ -18,6 +18,10 @@ class UnitService extends BaseBusinessCrudService
      */
     protected array $searchable = ['code', 'name'];
 
+    protected array $slugSearchable = ['name'];
+
+    protected array $normalizedSearchable = ['code'];
+
     /**
      * @param  BusinessContext  $businessContext
      * @param  UnitRepository  $repository
@@ -44,21 +48,4 @@ class UnitService extends BaseBusinessCrudService
             'is_active' => $data['is_active'] ?? true,
         ]);
     }
-	
-	protected function applySearchFilters($query, array $filters): void
-	{
-		foreach ($this->searchable as $field) {
-			if (empty($filters[$field])) {
-				continue;
-			}
-			if ($field === 'code') {
-				$normalizedCode = str_replace([' ', '-'], '', $filters[$field]);
-				
-				$query->whereRaw(
-					'REPLACE(REPLACE(code, "-", ""), " ", "") LIKE ?', ['%' . $normalizedCode . '%']);
-				continue;
-			}
-			$query->where($field, 'like', '%' . $filters[$field] . '%');
-		}
-	}
 }

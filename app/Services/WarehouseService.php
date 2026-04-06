@@ -19,6 +19,10 @@ class WarehouseService extends BaseBusinessCrudService
      */
     protected array $searchable = ['code', 'name'];
 
+    protected array $slugSearchable = ['name'];
+
+    protected array $normalizedSearchable = ['code'];
+
     /**
      * @param  BusinessContext  $businessContext
      * @param  WarehouseRepository  $repository

@@ -137,7 +137,7 @@ class UserService
             }
 
             $userData = $this->extractUserAttributes($data, true);
-			
+
             if (array_key_exists('password', $userData)) {
                 $userData['password'] = Hash::make($userData['password']);
             }
@@ -149,7 +149,7 @@ class UserService
             // Thông tin user và membership là hai lớp dữ liệu khác nhau nên cần update tách biệt.
             $membershipData = Arr::only($data, ['role', 'membership_status', 'is_owner']);
             $normalizedMembership = [];
-			
+
             if (array_key_exists('role', $membershipData)) {
                 $normalizedMembership['role'] = $membershipData['role'];
             }

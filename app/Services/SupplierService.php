@@ -19,6 +19,8 @@ class SupplierService extends BaseBusinessCrudService
      */
     protected array $searchable = ['name', 'contact_name', 'phone', 'email'];
 
+    protected array $slugSearchable = ['name'];
+
     /**
      * @param  BusinessContext  $businessContext
      * @param  SupplierRepository  $repository

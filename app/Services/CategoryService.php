@@ -9,6 +9,8 @@ class CategoryService extends BaseBusinessCrudService
 {
     protected array $searchable = ['name'];
 
+    protected array $slugSearchable = ['name'];
+
     public function __construct(BusinessContext $businessContext, CategoryRepository $repository)
     {
         parent::__construct($businessContext);
