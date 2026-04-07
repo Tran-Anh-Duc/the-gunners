@@ -17,7 +17,7 @@ class WarehouseService extends BaseBusinessCrudService
     /**
      * Các field hỗ trợ tìm kiếm ở màn hình danh sách kho.
      */
-    protected array $searchable = ['code', 'name'];
+    protected array $searchable = ['code', 'name','is_active'];
 
     protected array $slugSearchable = ['name'];
 
