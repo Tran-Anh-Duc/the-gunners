@@ -111,6 +111,59 @@ class CoreInventoryFlowTest extends TestCase
         ]);
     }
 
+    public function test_it_auto_generates_stable_sku_when_frontend_does_not_send_one(): void
+    {
+        $firstResponse = $this->postJson('/api/products', [
+            'name' => 'Sản phẩm tự sinh SKU 1',
+            'unit_id' => $this->unit->id,
+            'cost_price' => 10000,
+            'sale_price' => 15000,
+        ]);
+
+        $secondResponse = $this->postJson('/api/products', [
+            'name' => 'Sản phẩm tự sinh SKU 2',
+            'unit_id' => $this->unit->id,
+            'cost_price' => 12000,
+            'sale_price' => 18000,
+        ]);
+
+        $firstResponse->assertOk();
+        $secondResponse->assertOk();
+
+        $firstSku = (string) $firstResponse->json('data.sku');
+        $secondSku = (string) $secondResponse->json('data.sku');
+
+        $this->assertMatchesRegularExpression('/^TEST-SHOP-[A-Z]{3}-000001$/', $firstSku);
+        $this->assertMatchesRegularExpression('/^TEST-SHOP-[A-Z]{3}-000002$/', $secondSku);
+
+        preg_match('/^TEST-SHOP-([A-Z]{3})-000001$/', $firstSku, $matches);
+
+        $this->assertSame(sprintf('TEST-SHOP-%s-000002', $matches[1]), $secondSku);
+        $this->assertDatabaseHas('business_sequences', [
+            'business_id' => $this->business->id,
+            'scope' => 'product.sku',
+            'prefix' => $matches[1],
+            'current_value' => 2,
+        ]);
+    }
+
+    public function test_it_rejects_updating_sku_after_product_creation(): void
+    {
+        $product = $this->createProduct();
+
+        $this->putJson("/api/products/{$product->id}", [
+            'sku' => 'SKU-MOI-001',
+            'name' => 'Tên mới',
+        ])->assertStatus(422)
+            ->assertJsonPath('code', 'error_failed')
+            ->assertJsonStructure(['data' => ['sku']]);
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'sku' => $product->sku,
+        ]);
+    }
+
     public function test_stock_in_creates_inventory_movements_and_current_stock(): void
     {
         // Mục tiêu: khi phiếu nhập được confirm thì ledger và current stock phải cùng được cập nhật.

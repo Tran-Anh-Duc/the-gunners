@@ -7,6 +7,7 @@ use App\Models\Unit;
 use App\Repositories\ProductRepository;
 use App\Support\BusinessContext;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Service CRUD sản phẩm.
@@ -34,12 +35,32 @@ class ProductService extends BaseBusinessCrudService
         $this->repository = $repository;
     }
 
+    public function create(array $data): Model
+    {
+        $businessId = $this->resolveBusinessId($data);
+
+        return DB::transaction(function () use ($data, $businessId) {
+            $payload = $this->payloadForCreate($data, $businessId);
+
+            if (empty($payload['sku'])) {
+                $payload['sku'] = $this->sequenceService()->nextProductSku($businessId);
+            }
+
+            return $this->repository->createForBusiness($businessId, $payload)
+                ->load($this->with);
+        });
+    }
+
     public function paginate(array $filters): array
     {
         [$businessId, $query] = parent::paginate($filters);
 
         if (! empty($filters['category_id'])) {
             $query->where('category_id', (int) $filters['category_id']);
+        }
+
+        if(!empty($filters['unit_id'])){
+            $query->where('unit_id', (int) $filters['unit_id']);
         }
 
         return [$businessId, $query];
@@ -62,7 +83,10 @@ class ProductService extends BaseBusinessCrudService
         $this->assertBelongsToBusiness(Unit::class, $businessId, (int) $data['unit_id'], 'unit_id');
         $this->assertBelongsToBusiness(Category::class, $businessId, isset($data['category_id']) ? (int) $data['category_id'] : null, 'category_id');
 
+        $sku = isset($data['sku']) ? trim((string) $data['sku']) : null;
+
         return array_merge(parent::payloadForCreate($data, $businessId), [
+            'sku' => $sku !== '' ? $sku : null,
             'product_type' => $data['product_type'] ?? 'simple',
             'track_inventory' => $data['track_inventory'] ?? true,
             'cost_price' => $data['cost_price'] ?? 0,
@@ -81,6 +105,8 @@ class ProductService extends BaseBusinessCrudService
      */
     protected function payloadForUpdate(array $data, int $businessId, Model $record): array
     {
+        unset($data['sku']);
+
         // Chỉ kiểm tra lại `unit_id` khi request thực sự muốn thay đổi đơn vị tính.
         if (array_key_exists('unit_id', $data)) {
             $this->assertBelongsToBusiness(Unit::class, $businessId, (int) $data['unit_id'], 'unit_id');

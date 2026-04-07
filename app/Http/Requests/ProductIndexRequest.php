@@ -13,6 +13,7 @@ class ProductIndexRequest extends BaseBusinessRequest
             'barcode' => ['nullable', 'string'],
             'status' => ['nullable', 'string'],
             'category_id' => ['nullable', 'integer'],
+            'unit_id' => ['nullable', 'integer'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'sort_by' => ['nullable', 'string'],

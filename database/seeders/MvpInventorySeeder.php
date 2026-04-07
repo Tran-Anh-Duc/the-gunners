@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Business;
 use App\Models\BusinessModule;
+use App\Models\BusinessSequence;
 use App\Models\BusinessUser;
 use App\Models\Category;
 use App\Models\CurrentStock;
@@ -209,6 +210,7 @@ class MvpInventorySeeder extends Seeder
         Customer::withTrashed()->where('business_id', $businessId)->forceDelete();
         Warehouse::withTrashed()->where('business_id', $businessId)->forceDelete();
         Unit::withTrashed()->where('business_id', $businessId)->forceDelete();
+        BusinessSequence::query()->where('business_id', $businessId)->delete();
         BusinessModule::query()->where('business_id', $businessId)->delete();
         BusinessUser::query()->where('business_id', $businessId)->delete();
     }

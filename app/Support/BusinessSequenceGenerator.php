@@ -2,28 +2,43 @@
 
 namespace App\Support;
 
+use App\Services\SequenceService;
+use Illuminate\Support\Str;
+
 class BusinessSequenceGenerator
 {
     /**
-     * Sinh mã tăng dần trong phạm vi từng business.
+     * Compat helper cho các điểm gọi cũ.
      *
      * @param  class-string  $modelClass
      */
-    public static function nextFormatted(string $modelClass, int $businessId, string $column, string $prefix): string
+    public static function nextFormatted(
+        string $modelClass,
+        int $businessId,
+        string $column,
+        string $prefix,
+        int $padding = 4,
+        bool $prependBusinessCode = false,
+    ): string
     {
-        $sequence = $modelClass::query()
-            ->where('business_id', $businessId)
-            ->count() + 1;
+        return app(SequenceService::class)->nextScopedCode(
+            $businessId,
+            self::scopeFor($modelClass, $column),
+            $prefix,
+            $padding,
+            $prependBusinessCode,
+        );
+    }
 
-        do {
-            $candidate = sprintf('%s-%04d', $prefix, $sequence);
-            $exists = $modelClass::query()
-                ->where('business_id', $businessId)
-                ->where($column, $candidate)
-                ->exists();
-            $sequence++;
-        } while ($exists);
-
-        return $candidate;
+    /**
+     * Sinh tên scope ổn định theo model và tên cột.
+     *
+     * Ví dụ:
+     * - `Order::class`, `order_no` => `order.order_no`
+     * - `Unit::class`, `code` => `unit.code`
+     */
+    public static function scopeFor(string $modelClass, string $column): string
+    {
+        return Str::snake(class_basename($modelClass)).'.'.$column;
     }
 }

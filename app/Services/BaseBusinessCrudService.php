@@ -246,6 +246,11 @@
 			// Trả về null nếu đang chạy ở ngữ cảnh script/test không có user đăng nhập.
 			return $this->businessContext->currentUser()?->id;
 		}
+
+		protected function sequenceService(): SequenceService
+		{
+			return app(SequenceService::class);
+		}
 		
 		/**
 		 * Kiểm tra khóa ngoại tham chiếu có thuộc business hiện tại hay không.
@@ -326,6 +331,11 @@
 		 */
 		protected function nextDocumentNumber(string $modelClass, int $businessId, string $numberColumn, string $prefix): string
 		{
-			return BusinessSequenceGenerator::nextFormatted($modelClass, $businessId, $numberColumn, $prefix);
+			return $this->sequenceService()->nextScopedCode(
+				$businessId,
+				BusinessSequenceGenerator::scopeFor($modelClass, $numberColumn),
+				$prefix,
+				4,
+			);
 		}
 	}
