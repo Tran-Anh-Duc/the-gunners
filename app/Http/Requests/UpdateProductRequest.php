@@ -25,7 +25,7 @@ class UpdateProductRequest extends BaseBusinessRequest
             'track_inventory' => ['nullable', 'boolean'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['nullable', 'string', Rule::in(['active', 'inactive'])],
+            'is_active' => ['nullable', 'boolean'],
             'description' => ['nullable', 'string'],
         ];
     }

@@ -92,14 +92,14 @@ return new class extends Migration
             $table->boolean('track_inventory')->default(true);
             $table->decimal('cost_price', 18, 2)->default(0);
             $table->decimal('sale_price', 18, 2)->default(0);
-            $table->string('status', 30)->default('active');
+            $table->boolean('is_active')->default(true);
             $table->text('description')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
             $table->unique(['business_id', 'sku']);
             $table->index(['business_id', 'name']);
-            $table->index(['business_id', 'status']);
+            $table->index(['business_id', 'is_active']);
             $table->index(['business_id', 'unit_id']);
         });
     }

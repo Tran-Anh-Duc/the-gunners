@@ -21,7 +21,7 @@ class ProductService extends BaseBusinessCrudService
 {
     protected array $with = ['unit', 'category'];
 
-    protected array $searchable = ['sku', 'name', 'barcode', 'status'];
+    protected array $searchable = ['sku', 'name', 'barcode'];
 
     protected array $slugSearchable = ['name'];
 
@@ -59,8 +59,12 @@ class ProductService extends BaseBusinessCrudService
             $query->where('category_id', (int) $filters['category_id']);
         }
 
-        if(!empty($filters['unit_id'])){
+        if (! empty($filters['unit_id'])) {
             $query->where('unit_id', (int) $filters['unit_id']);
+        }
+
+        if (array_key_exists('is_active', $filters) && $filters['is_active'] !== null) {
+            $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOL));
         }
 
         return [$businessId, $query];
@@ -75,7 +79,7 @@ class ProductService extends BaseBusinessCrudService
      *
      * Method này sẽ:
      * - kiểm tra `unit_id` thuộc business hiện tại;
-     * - bổ sung default cho `product_type`, `track_inventory`, `cost_price`, `sale_price`, `status`.
+     * - bổ sung default cho `product_type`, `track_inventory`, `cost_price`, `sale_price`, `is_active`.
      */
     protected function payloadForCreate(array $data, int $businessId): array
     {
@@ -91,7 +95,7 @@ class ProductService extends BaseBusinessCrudService
             'track_inventory' => $data['track_inventory'] ?? true,
             'cost_price' => $data['cost_price'] ?? 0,
             'sale_price' => $data['sale_price'] ?? 0,
-            'status' => $data['status'] ?? 'active',
+            'is_active' => $data['is_active'] ?? true,
         ]);
     }
 

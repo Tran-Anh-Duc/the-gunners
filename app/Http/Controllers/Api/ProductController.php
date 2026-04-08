@@ -29,7 +29,7 @@ class ProductController extends ApiController
      *
      * Thành phần đầu vào:
      * - page/per_page/sort
-     * - sku, name, barcode, status
+     * - sku, name, barcode, is_active
      *
      * Cách xử lý:
      * - ProductService::paginate()
@@ -69,7 +69,7 @@ class ProductController extends ApiController
      *
      * Logic xử lý:
      * - kiểm tra `unit_id` có thuộc business hiện tại hay không;
-     * - tự bổ sung giá trị mặc định như `product_type`, `track_inventory`, `status`;
+     * - tự bổ sung giá trị mặc định như `product_type`, `track_inventory`, `is_active`;
      * - gắn `business_id` ở tầng repository để tránh client can thiệp.
      */
     public function store(StoreProductRequest $request): JsonResponse

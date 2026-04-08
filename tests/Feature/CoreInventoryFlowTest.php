@@ -451,7 +451,7 @@ class CoreInventoryFlowTest extends TestCase
             'track_inventory' => true,
             'cost_price' => 10000,
             'sale_price' => 15000,
-            'status' => 'active',
+            'is_active' => true,
         ]);
     }
 

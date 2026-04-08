@@ -145,7 +145,7 @@ class PaymentSummaryFlowTest extends TestCase
             'track_inventory' => true,
             'cost_price' => 10000,
             'sale_price' => $unitPrice,
-            'status' => 'active',
+            'is_active' => true,
         ]);
 
         $response = $this->postJson('/api/orders', [

@@ -11,7 +11,7 @@ class ProductIndexRequest extends BaseBusinessRequest
             'sku' => ['nullable', 'string'],
             'name' => ['nullable', 'string'],
             'barcode' => ['nullable', 'string'],
-            'status' => ['nullable', 'string'],
+            'is_active' => ['nullable', 'boolean'],
             'category_id' => ['nullable', 'integer'],
             'unit_id' => ['nullable', 'integer'],
             'page' => ['nullable', 'integer', 'min:1'],

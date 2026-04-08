@@ -726,7 +726,7 @@ class MvpInventorySeeder extends Seeder
                 'track_inventory' => true,
                 'cost_price' => $data['cost_price'],
                 'sale_price' => $data['sale_price'],
-                'status' => 'active',
+                'is_active' => true,
                 'description' => $data['description'],
             ]);
         }
@@ -753,7 +753,7 @@ class MvpInventorySeeder extends Seeder
                 'track_inventory' => true,
                 'cost_price' => $costPrice,
                 'sale_price' => $salePrice,
-                'status' => $index % 12 === 0 ? 'inactive' : 'active',
+                'is_active' => $index % 12 !== 0,
                 'description' => sprintf('San pham duoc seed de test goi API, paging va bo loc #%03d', $index),
             ]);
         }

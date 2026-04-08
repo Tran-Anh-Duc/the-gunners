@@ -104,7 +104,7 @@ class NameSlugSearchApiTest extends TestCase
             'barcode' => '8938501999999',
             'cost_price' => 10000,
             'sale_price' => 15000,
-            'status' => 'active',
+            'is_active' => true,
         ]);
     }
 

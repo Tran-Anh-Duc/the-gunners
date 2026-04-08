@@ -36,7 +36,7 @@ class Product extends Model
         'track_inventory',
         'cost_price',
         'sale_price',
-        'status',
+        'is_active',
         'description',
     ];
 
@@ -44,6 +44,7 @@ class Product extends Model
     {
         return [
             'track_inventory' => 'boolean',
+            'is_active' => 'boolean',
             'cost_price' => 'decimal:2',
             'sale_price' => 'decimal:2',
         ];

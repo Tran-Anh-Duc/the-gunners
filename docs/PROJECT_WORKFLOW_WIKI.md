@@ -158,6 +158,34 @@ Sau khi đăng nhập, thứ tự setup khuyến nghị là:
 
 Nếu chưa có master data, tester gần như không test được các luồng chứng từ phía sau.
 
+### Gợi ý request cho product
+
+Khi tạo hoặc cập nhật `product`, field bật/tắt hiện dùng:
+
+- `is_active`: boolean `true/false`
+
+Ví dụ tạo `product`:
+
+```json
+{
+  "unit_id": 1,
+  "category_id": 1,
+  "name": "Sản phẩm demo",
+  "track_inventory": true,
+  "cost_price": 10000,
+  "sale_price": 15000,
+  "is_active": true
+}
+```
+
+Ví dụ lọc danh sách `product`:
+
+- `GET /api/products?sku=SKU-001`
+- `GET /api/products?name=san-pham-demo`
+- `GET /api/products?barcode=8938`
+- `GET /api/products?is_active=1`
+- `GET /api/products?category_id=1&unit_id=1`
+
 ---
 
 ## 5.3. Workflow nhập kho
