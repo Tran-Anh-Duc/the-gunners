@@ -21,7 +21,16 @@ class CategoryController extends ApiController
     public function index(CategoryIndexRequest $request): JsonResponse
     {
         [, $query] = $this->categoryService->paginate($request->validated());
-
+		
+		if ($request->boolean('is_option')) {
+			return $this->successResponse(
+				'Fetched successfully.',
+				'list_success',
+				self::HTTP_OK,
+				$query->select(['id', 'name'])->get()
+			);
+		}
+		
         return $this->successResponse(
             'Fetched successfully.',
             'list_success',

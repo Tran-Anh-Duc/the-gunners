@@ -28,21 +28,30 @@ class UnitController extends ApiController
     /**
      * Danh sách đơn vị tính trong business hiện tại.
      */
-    public function index(BusinessIndexRequest $request): JsonResponse
-    {
-        // Việc lọc theo `code` hoặc `name` được giao cho service để tái sử dụng thống nhất.
-        [, $query] = $this->unitService->paginate(array_merge(
-            $request->validated(),
-            $request->only($this->unitService->searchableFilters()),
-        ));
-
-        return $this->successResponse(
-            'Fetched successfully.',
-            'list_success',
-            self::HTTP_OK,
-            $this->paginate($query, defaultSort: ['column' => 'id', 'order' => 'desc'], defaultPerPage: 10),
-        );
-    }
+	public function index(BusinessIndexRequest $request): JsonResponse
+	{
+		// Việc lọc theo `code` hoặc `name` được giao cho service để tái sử dụng thống nhất.
+		[, $query] = $this->unitService->paginate(array_merge(
+			$request->validated(),
+			$request->only($this->unitService->searchableFilters()),
+		));
+		
+		if ($request->boolean('is_option')) {
+			return $this->successResponse(
+				'Fetched successfully.',
+				'list_success',
+				self::HTTP_OK,
+				$query->select(['id', 'name'])->get()
+			);
+		}
+		
+		return $this->successResponse(
+			'Fetched successfully.',
+			'list_success',
+			self::HTTP_OK,
+			$this->paginate($query, defaultSort: ['column' => 'id', 'order' => 'desc'], defaultPerPage: 10),
+		);
+	}
 
     /**
      * Lấy chi tiết một đơn vị tính.
