@@ -99,86 +99,167 @@ PM/tester nên hiểu:
 
 ## 5. Workflow nghiệp vụ hiện tại
 
-## 5.1. Đăng ký và đăng nhập
+## 5.1. Xác thực và business context
 
-### Đăng ký
+Endpoint xác thực hiện tại:
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+
+### Luồng đăng ký
 
 Khi gọi `POST /api/auth/register`:
 
-1. Hệ thống tạo user hệ thống.
-2. Hệ thống tạo business mặc định cho user đó.
-3. Hệ thống tạo membership `owner`.
-4. Hệ thống bật các module mặc định:
-   - products
-   - inventory
-   - orders
-   - customers
-   - suppliers
-   - payments
+1. Hệ thống tạo `user` hệ thống.
+2. Hệ thống tạo `business` mặc định cho user đó.
+3. Hệ thống tạo membership `owner` trong `business_users`.
+4. Hệ thống bật sẵn các module core:
+   - `products`
+   - `inventory`
+   - `orders`
+   - `customers`
+   - `suppliers`
+   - `payments`
 5. Hệ thống trả về `access_token`.
 
-### Đăng nhập
+### Luồng đăng nhập
 
 Khi gọi `POST /api/auth/login`:
 
 1. Hệ thống tìm user theo email.
 2. Kiểm tra password.
-3. Kiểm tra user đang active.
-4. Kiểm tra user còn ít nhất 1 membership active.
-5. Trả về JWT token.
+3. Kiểm tra `users.is_active = true`.
+4. Kiểm tra user còn ít nhất một membership `active`.
+5. Hệ thống cập nhật `last_login_at`.
+6. Trả về JWT token.
+
+### Business context được resolve như thế nào
+
+Mọi API nghiệp vụ đều đi qua `BusinessContext`.
+
+Thứ tự resolve hiện tại:
+
+1. Nếu request gửi `business_id` và user có quyền trong business đó thì dùng giá trị này.
+2. Nếu request không gửi `business_id`, hệ thống lấy business active hiện tại từ JWT context.
+3. Nếu không có user đăng nhập nhưng có `business_id`, hệ thống vẫn cho phép dùng trong test hoặc script nội bộ.
+4. Nếu vẫn không xác định được, request bị lỗi `Business context is required`.
 
 ### Điểm tester cần lưu ý
 
-- user bị khóa thì không đăng nhập được;
-- user không còn membership active thì không đăng nhập được;
-- token mang theo `business_id`, `role`, `is_owner`.
+- mọi route nghiệp vụ đều đi sau middleware `jwt`;
+- phần lớn route còn đi tiếp qua middleware `permission:{module},{action}`;
+- `logout` dùng cơ chế blacklist token trong cache, không phải session server truyền thống;
+- quyền đang được map ở tầng ứng dụng từ membership hiện tại.
 
 ---
 
-## 5.2. Thiết lập dữ liệu master
+## 5.2. Thiết lập master data và quản lý user trong business
 
-Sau khi đăng nhập, thứ tự setup khuyến nghị là:
+Sau khi đăng nhập, thứ tự setup khuyến nghị hiện tại là:
 
 1. `units`
 2. `warehouses`
-3. `products`
-4. `customers`
-5. `suppliers`
-6. `users` trong business nếu cần phân vai
+3. `categories`
+4. `products`
+5. `customers`
+6. `suppliers`
+7. `users` trong business nếu cần phân vai
 
-### Giải thích
+### Các endpoint master data hiện có
 
-- `product` bắt buộc cần `unit`
-- các chứng từ kho cần `warehouse`
-- `order` thường cần `customer`
-- `stock_in` thường cần `supplier`
-- `payment` có thể liên kết `customer`, `supplier`, `order`, `stock_in`
+- `units`
+- `warehouses`
+- `categories`
+- `products`
+- `customers`
+- `suppliers`
+- `users`
 
-### Gợi ý test nhanh
+Với hầu hết master data, hệ thống đang dùng cùng một pattern:
 
-Nếu chưa có master data, tester gần như không test được các luồng chứng từ phía sau.
+1. resolve `business_id`;
+2. query hoặc ghi dữ liệu theo đúng business hiện tại;
+3. validate format ở FormRequest;
+4. kiểm tra chéo khóa ngoại theo business ở tầng service nếu có;
+5. trả record đã eager load relation cần thiết.
 
-### Gợi ý request cho product
+### Các điểm khác biệt cần hiểu
 
-Khi tạo hoặc cập nhật `product`, field bật/tắt hiện dùng:
+- `units`, `warehouses`, `categories` hiện tự gán `is_active = true` nếu không gửi.
+- `products` bắt buộc có `unit_id`, `category_id` là optional.
+- `customers` và `suppliers` hiện là master data CRUD khá thẳng, chủ yếu dùng để liên kết chứng từ.
+- `users` là luồng đặc biệt vì tách 2 lớp dữ liệu:
+  - bảng `users`: tài khoản hệ thống
+  - bảng `business_users`: role, status, is_owner theo từng business
 
-- `is_active`: boolean `true/false`
+### Workflow user trong business
 
-Ví dụ tạo `product`:
+Khi tạo user bằng `POST /api/users`:
 
-```json
-{
-  "unit_id": 1,
-  "category_id": 1,
-  "name": "Sản phẩm demo",
-  "track_inventory": true,
-  "cost_price": 10000,
-  "sale_price": 15000,
-  "is_active": true
-}
-```
+1. Hệ thống tạo tài khoản ở bảng `users`.
+2. Password được hash tại backend.
+3. Hệ thống tạo membership trong `business_users`.
+4. Role mặc định là `staff` nếu không gửi.
+5. Membership status mặc định là `active` nếu không gửi.
 
-Ví dụ lọc danh sách `product`:
+Khi cập nhật user bằng `PUT /api/users/{id}`:
+
+- dữ liệu tài khoản và dữ liệu membership được update tách riêng;
+- đổi `password` sẽ được hash lại;
+- có thể đổi `role`, `membership_status`, `is_owner`.
+
+Khi xóa user bằng `DELETE /api/users/{id}`:
+
+1. Hệ thống xóa membership của user trong business hiện tại trước.
+2. Nếu user vẫn còn membership ở business khác, tài khoản hệ thống vẫn được giữ lại.
+3. Chỉ khi user không còn membership nào thì mới xóa record `users`.
+
+---
+
+## 5.3. Workflow sản phẩm
+
+Endpoint chính:
+
+- `GET /api/products`
+- `POST /api/products`
+- `GET /api/products/{id}`
+- `PUT /api/products/{id}`
+- `DELETE /api/products/{id}`
+
+### Luồng tạo và cập nhật
+
+Khi tạo `product`:
+
+1. Request validate dữ liệu cơ bản.
+2. Service kiểm tra `unit_id` và `category_id` có thuộc đúng business hiện tại không.
+3. Nếu không gửi `sku`, backend tự sinh SKU theo business.
+4. Backend tự gán default:
+   - `product_type = simple`
+   - `track_inventory = true`
+   - `cost_price = 0`
+   - `sale_price = 0`
+   - `is_active = true`
+5. Record được lưu trong `products` và load kèm `unit`, `category`.
+
+Khi cập nhật `product`:
+
+- chỉ cần gửi các field muốn đổi;
+- `sku` bị cấm trong request update;
+- nếu gửi `unit_id` hoặc `category_id`, service sẽ kiểm tra lại business scope;
+- có thể bỏ `category` bằng cách gửi `category_id = null`.
+
+### Filter danh sách product hiện tại
+
+- `sku`
+- `name`
+- `barcode`
+- `is_active`
+- `category_id`
+- `unit_id`
+
+Ví dụ:
 
 - `GET /api/products?sku=SKU-001`
 - `GET /api/products?name=san-pham-demo`
@@ -188,147 +269,188 @@ Ví dụ lọc danh sách `product`:
 
 ---
 
-## 5.3. Workflow nhập kho
-
-Endpoint chính:
-
-- `POST /api/stock-in`
-- `PUT /api/stock-in/{id}`
-- `POST /api/stock-in/{id}/confirm`
-- `POST /api/stock-in/{id}/cancel`
-
-### Luồng hiện tại
-
-1. Người dùng tạo phiếu nhập kho.
-2. Hệ thống kiểm tra `warehouse` và `supplier` có thuộc đúng business không.
-3. Hệ thống build snapshot item nhập kho.
-4. Hệ thống tính `subtotal`, `discount_amount`, `total_amount`.
-5. Nếu chứng từ ở trạng thái `confirmed`, hệ thống tạo movement tồn kho.
-
-### Trạng thái và tác động
-
-- `draft`: chưa tác động tồn kho
-- `confirmed`: cộng tồn kho
-- `cancelled`: gỡ tác động tồn kho của chứng từ đó
-
-### Kết luận nghiệp vụ
-
-Phiếu nhập kho là nguồn vào của tồn và cũng là nơi cung cấp giá vốn đầu vào.
-
----
-
 ## 5.4. Workflow đơn hàng
 
 Endpoint chính:
 
+- `GET /api/orders`
 - `POST /api/orders`
+- `GET /api/orders/{id}`
 - `PUT /api/orders/{id}`
 - `POST /api/orders/{id}/confirm`
 - `POST /api/orders/{id}/cancel`
 
 ### Luồng hiện tại
 
-1. Người dùng tạo đơn hàng.
-2. Hệ thống kiểm tra `warehouse`, `customer`.
-3. Hệ thống build snapshot item.
-4. Hệ thống tính lại tiền ở backend:
+1. Hệ thống kiểm tra `warehouse_id` và `customer_id` có thuộc business hiện tại không.
+2. Backend dựng snapshot item từ `products`:
+   - `product_id`
+   - `product_sku`
+   - `product_name`
+   - `quantity`
+   - `unit_price`
+   - `discount_amount`
+3. Nếu item không gửi `unit_price`, backend lấy mặc định từ `product.sale_price`.
+4. Backend tự tính lại:
    - `subtotal`
    - `discount_amount`
    - `shipping_amount`
    - `total_amount`
-5. Đơn hàng được lưu với `status` và `payment_status`.
+5. `order_no` được tự sinh nếu client không gửi.
+
+### Trạng thái hiện có
+
+- `draft`
+- `confirmed`
+- `completed`
+- `cancelled`
 
 ### Điểm quan trọng
 
-Đơn hàng hiện tại không tự động trừ kho.
-
-Muốn trừ kho thực tế, phải đi qua `stock_out`.
-
-### Kết luận nghiệp vụ
-
-`order` là chứng từ bán hàng và doanh thu.
-`stock_out` mới là chứng từ vận hành kho.
+- `confirm` và `cancel` của order hiện chỉ đổi `status`.
+- Order hiện không tạo inventory movement.
+- Muốn trừ tồn thực tế, phải đi qua `stock_out`.
+- `payment_status` của order cuối cùng được sync lại từ payment đã `paid`, không phải chỉ dựa vào giá trị client gửi lúc tạo đơn.
 
 ---
 
-## 5.5. Workflow xuất kho
+## 5.5. Workflow nhập kho
 
 Endpoint chính:
 
+- `GET /api/stock-in`
+- `POST /api/stock-in`
+- `GET /api/stock-in/{id}`
+- `PUT /api/stock-in/{id}`
+- `POST /api/stock-in/{id}/confirm`
+- `POST /api/stock-in/{id}/cancel`
+
+### Luồng hiện tại
+
+1. Hệ thống kiểm tra `warehouse_id` và `supplier_id`.
+2. Backend build snapshot item nhập kho:
+   - `product_id`
+   - `product_sku`
+   - `product_name`
+   - `quantity`
+   - `unit_cost`
+3. Backend tự tính:
+   - `subtotal`
+   - `discount_amount`
+   - `total_amount`
+4. `stock_in_no` được tự sinh nếu không gửi.
+5. Sau khi create, update, confirm hoặc cancel, service luôn gọi `InventoryLedgerService::syncStockIn()`.
+
+### Trạng thái và tác động tồn
+
+- `draft`: lưu chứng từ nhưng không tạo movement
+- `confirmed`: tạo movement dương vào `inventory_movements`
+- `cancelled`: xóa movement cũ của chứng từ và rebuild lại `current_stocks`
+
+### Kiểu chứng từ đang hỗ trợ
+
+- `purchase`
+- `return`
+- `opening`
+
+### Kết luận nghiệp vụ
+
+Phiếu nhập kho hiện là nguồn chính để:
+
+- tăng tồn kho;
+- ghi nhận giá vốn đầu vào;
+- làm dữ liệu nền cho moving average về sau.
+
+---
+
+## 5.6. Workflow xuất kho
+
+Endpoint chính:
+
+- `GET /api/stock-out`
 - `POST /api/stock-out`
+- `GET /api/stock-out/{id}`
 - `PUT /api/stock-out/{id}`
 - `POST /api/stock-out/{id}/confirm`
 - `POST /api/stock-out/{id}/cancel`
 
 ### Luồng hiện tại
 
-1. Người dùng tạo phiếu xuất kho.
-2. Hệ thống kiểm tra `warehouse`, `order`, `customer`.
-3. Hệ thống build snapshot item xuất kho.
-4. Hệ thống tính `subtotal` và `total_amount`.
-5. Nếu chứng từ `confirmed`, hệ thống ghi movement âm vào ledger.
-6. Hệ thống tính giá vốn theo moving average.
+1. Hệ thống kiểm tra `warehouse_id`, `order_id`, `customer_id` theo business hiện tại.
+2. Backend build snapshot item xuất kho.
+3. Nếu item không gửi `unit_price`, backend lấy mặc định từ `product.sale_price`.
+4. Backend tính `subtotal` và `total_amount`.
+5. Sau khi create, update, confirm hoặc cancel, service luôn gọi `InventoryLedgerService::syncStockOut()`.
 
-### Trạng thái và tác động
+### Trạng thái và tác động tồn
 
-- `draft`: chưa trừ kho
-- `confirmed`: trừ kho
-- `cancelled`: bỏ tác động trừ kho trước đó
+- `draft`: chưa tạo movement
+- `confirmed`: tạo movement âm
+- `cancelled`: xóa movement cũ của chứng từ và rebuild lại tồn
+
+### Kiểu chứng từ đang hỗ trợ
+
+- `sale`
+- `return`
+- `adjustment`
 
 ### Điểm rất quan trọng
 
-Giá vốn xuất không lấy cứng từ giá bán.
-
-Hệ thống sẽ tính lại giá vốn theo tồn hiện có và moving average trong `InventoryLedgerService`.
+- Giá bán trên item không phải giá vốn.
+- Khi rebuild ledger, hệ thống tính lại `unit_cost` của movement xuất theo moving average tại thời điểm đó.
+- Nếu việc xác nhận hoặc cập nhật chứng từ `confirmed` làm tồn âm, hệ thống sẽ chặn bằng lỗi `Insufficient stock to confirm this document.`
 
 ---
 
-## 5.6. Workflow kiểm kho và điều chỉnh tồn
+## 5.7. Workflow kiểm kho và điều chỉnh tồn
 
 Endpoint chính:
 
+- `GET /api/stock-adjustments`
 - `POST /api/stock-adjustments`
+- `GET /api/stock-adjustments/{id}`
 - `PUT /api/stock-adjustments/{id}`
 - `POST /api/stock-adjustments/{id}/confirm`
 - `POST /api/stock-adjustments/{id}/cancel`
 
 ### Luồng hiện tại
 
-1. Người dùng chọn kho và danh sách sản phẩm cần kiểm.
-2. Hệ thống lấy:
-   - `expected_qty` từ request hoặc tồn hiện tại
-   - `counted_qty` từ số kiểm thực tế
-3. Hệ thống tính:
+1. Người dùng chọn `warehouse_id` và danh sách item kiểm kho.
+2. Với từng item:
+   - `counted_qty` là bắt buộc
+   - `expected_qty` có thể do request gửi hoặc backend tự lấy từ `current_stocks`
+3. Backend tính:
    - `difference_qty = counted_qty - expected_qty`
-4. Nếu chứng từ `confirmed`, hệ thống tạo movement điều chỉnh.
+4. `unit_cost` được chọn theo thứ tự ưu tiên:
+   - request gửi lên
+   - `current_stocks.avg_unit_cost`
+   - `products.cost_price`
+5. Sau khi create, update, confirm hoặc cancel, service luôn gọi `InventoryLedgerService::syncStockAdjustment()`.
 
 ### Ý nghĩa nghiệp vụ
 
-- `difference_qty > 0`: tăng tồn
-- `difference_qty < 0`: giảm tồn
-- `difference_qty = 0`: không tạo chênh lệch thực tế
+- `difference_qty > 0`: tạo movement `adjustment_in`
+- `difference_qty < 0`: tạo movement `adjustment_out`
+- `difference_qty = 0`: không tạo movement
 
 ### Khi nào dùng
 
-Luồng này dùng khi tồn hệ thống lệch so với tồn thực tế.
+Luồng này dùng khi muốn chốt lại tồn thực tế so với số tồn hệ thống đang giữ.
 
 ---
 
-## 5.7. Workflow thanh toán
+## 5.8. Workflow thanh toán
 
 Endpoint chính:
 
+- `GET /api/payments`
 - `POST /api/payments`
+- `GET /api/payments/{id}`
 - `PUT /api/payments/{id}`
 - `POST /api/payments/{id}/confirm`
 - `POST /api/payments/{id}/cancel`
 
 ### Luồng hiện tại
-
-Payment có thể là:
-
-- `direction = in`: thu tiền
-- `direction = out`: chi tiền
 
 Payment có thể liên kết với:
 
@@ -337,28 +459,47 @@ Payment có thể liên kết với:
 - `customer`
 - `supplier`
 
-### Cách hệ thống xử lý
+Khi create hoặc update payment:
 
-1. Kiểm tra tất cả khóa ngoại có đúng business hiện tại không.
-2. Tạo hoặc cập nhật payment.
-3. Nếu payment liên kết `order`, hệ thống sync lại:
-   - `paid_amount`
-   - `payment_status`
+1. Service kiểm tra toàn bộ khóa ngoại liên quan có thuộc đúng business hiện tại không.
+2. `payment_no` được tự sinh nếu không gửi.
+3. Default hiện tại:
+   - `direction = in`
+   - `method = cash`
+   - `status = paid`
+4. Sau khi lưu, nếu payment có liên kết order thì hệ thống sync lại:
+   - `orders.paid_amount`
+   - `orders.payment_status`
 
-### Quy ước payment status của order
+### Trạng thái và hướng payment
+
+- `direction = in`: thu tiền
+- `direction = out`: chi tiền
+- `status`: `pending`, `paid`, `failed`, `cancelled`
+
+### Quy ước payment summary của order
+
+`paid_amount` chỉ cộng các payment:
+
+- `direction = in`
+- `status = paid`
+
+`payment_status` của order được suy ra như sau:
 
 - `unpaid`: chưa thu gì
-- `partial`: thu một phần
-- `paid`: thu đủ hoặc vượt tổng tiền đơn
+- `partial`: đã thu một phần
+- `paid`: đã thu đủ hoặc vượt tổng tiền đơn
 
 ### Điểm cần hiểu rõ
 
-Payment không làm thay đổi tồn kho.
-Payment chỉ ảnh hưởng nghiệp vụ tài chính của đơn hàng hoặc nhập hàng.
+- `confirm` payment hiện map sang trạng thái `paid`.
+- `cancel` payment hiện map sang trạng thái `cancelled`.
+- Payment không làm thay đổi tồn kho.
+- Payment hiện chủ yếu sync summary cho `order`; `stock_in` mới chỉ là quan hệ tham chiếu nghiệp vụ.
 
 ---
 
-## 5.8. Workflow xem tồn kho
+## 5.9. Workflow xem tồn kho hiện tại
 
 Endpoint chính:
 
@@ -366,22 +507,28 @@ Endpoint chính:
 
 ### Hệ thống đang làm gì
 
-Màn hình tồn kho không đọc trực tiếp từ `inventory_movements`.
+Màn hình tồn kho hiện tại không đọc trực tiếp từ `inventory_movements`.
 
-Nó đọc từ `current_stocks`, là bảng tổng hợp đã được rebuild từ ledger.
+Nó đọc từ `current_stocks`, là read model đã được rebuild từ ledger.
 
-### Ý nghĩa
+### Filter đang hỗ trợ
 
-- `inventory_movements`: nguồn sự thật
-- `current_stocks`: bảng đọc nhanh cho UI
+- `warehouse_id`
+- `product_id`
+- `product_name`
+- `sku`
 
-### Kết luận
+### Quy ước hiện tại của bảng tồn
 
-Nếu tester thấy tồn sai, cần kiểm tra theo thứ tự:
+- `inventory_movements` là nguồn sự thật
+- `current_stocks` là bảng đọc nhanh cho UI
+- nếu một cặp `warehouse-product` có tồn `<= 0`, dòng trong `current_stocks` sẽ bị xóa
 
-1. chứng từ nào đã `confirmed`
-2. movement đã được tạo chưa
-3. current stock đã được rebuild đúng chưa
+### Cách kiểm tra khi thấy tồn sai
+
+1. chứng từ nào đang ở trạng thái `confirmed`
+2. movement của chứng từ đó đã được tạo hay xóa đúng chưa
+3. `current_stocks` đã được rebuild đúng cho cặp kho - sản phẩm bị ảnh hưởng chưa
 
 ---
 
