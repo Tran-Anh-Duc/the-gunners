@@ -17,7 +17,7 @@ class SupplierService extends BaseBusinessCrudService
     /**
      * Các field text có thể dùng để tìm kiếm danh sách nhà cung cấp.
      */
-    protected array $searchable = ['name', 'contact_name', 'phone', 'email'];
+    protected array $searchable = ['name', 'contact_name', 'phone', 'email','is_active'];
 
     protected array $slugSearchable = ['name'];
 
