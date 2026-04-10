@@ -17,7 +17,7 @@ class CustomerService extends BaseBusinessCrudService
     /**
      * Các field hỗ trợ tìm kiếm text ở màn hình danh sách khách hàng.
      */
-    protected array $searchable = ['name', 'phone', 'email'];
+    protected array $searchable = ['name', 'phone', 'email','is_active'];
 
     protected array $slugSearchable = ['name'];
 

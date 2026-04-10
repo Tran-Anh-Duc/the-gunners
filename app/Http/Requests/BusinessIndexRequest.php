@@ -26,6 +26,7 @@ class BusinessIndexRequest extends BaseBusinessRequest
             'sort_by' => ['nullable', 'string'],
             'sort_order' => ['nullable', 'in:asc,desc'],
 	        'is_option' => ['nullable', 'boolean'],
+	        'is_active' => ['nullable', 'boolean'],
         ];
     }
 }
