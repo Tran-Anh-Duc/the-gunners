@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Business;
 use App\Models\Category;
-use App\Models\CurrentStock;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Supplier;
@@ -159,27 +158,6 @@ class NameSlugSearchApiTest extends TestCase
         $this->assertListContainsName('/api/customers?name=nguyen%20thi%20ha', 'Nguyễn Thị Hà');
         $this->assertListContainsName('/api/suppliers?name=nha%20cung%20cap%20dien%20tu', 'Nhà cung cấp điện tử');
         $this->assertListContainsName('/api/products?name=san%20pham%20sac%20nhanh', 'Sản phẩm sạc nhanh');
-    }
-
-    public function test_inventory_route_can_search_product_name_without_diacritics(): void
-    {
-        CurrentStock::query()->create([
-            'business_id' => $this->business->id,
-            'warehouse_id' => $this->warehouse->id,
-            'product_id' => $this->product->id,
-            'quantity_on_hand' => 10,
-            'avg_unit_cost' => 10000,
-            'stock_value' => 100000,
-            'last_movement_at' => now(),
-        ]);
-
-        $response = $this->getJson('/api/inventory/stocks?product_name=san%20pham%20sac%20nhanh');
-
-        $response->assertOk();
-
-        $names = collect($response->json('data.items'))->pluck('product.name')->all();
-
-        $this->assertContains('Sản phẩm sạc nhanh', $names);
     }
 
     public function test_user_index_can_search_name_without_diacritics(): void

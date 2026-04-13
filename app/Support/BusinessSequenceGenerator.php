@@ -34,8 +34,8 @@ class BusinessSequenceGenerator
      * Sinh tên scope ổn định theo model và tên cột.
      *
      * Ví dụ:
-     * - `Order::class`, `order_no` => `order.order_no`
      * - `Unit::class`, `code` => `unit.code`
+     * - `Product::class`, `sku` => `product.sku`
      */
     public static function scopeFor(string $modelClass, string $column): string
     {

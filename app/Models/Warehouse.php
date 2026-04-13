@@ -6,7 +6,6 @@ use App\Support\BusinessSequenceGenerator;
 use App\Traits\HasNameSlug;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -15,12 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Kho của business.
  *
- * Warehouse là chiều dữ liệu rất quan trọng:
- * - stock_in
- * - stock_out
- * - stock_adjustment
- * - inventory_movements
- * - current_stocks
+ * Warehouse là master data quan trọng để nhóm sản phẩm theo điểm lưu trữ.
  */
 class Warehouse extends Model
 {
@@ -59,45 +53,4 @@ class Warehouse extends Model
         return $this->belongsTo(Business::class);
     }
 
-    public function orders(): HasMany
-    {
-        // Các đơn hàng được gắn kho xử lý này.
-        return $this->hasMany(Order::class);
-    }
-
-    public function stockIns(): HasMany
-    {
-        // Các phiếu nhập vào kho này.
-        return $this->hasMany(StockIn::class);
-    }
-
-    public function stockOuts(): HasMany
-    {
-        // Các phiếu xuất từ kho này.
-        return $this->hasMany(StockOut::class);
-    }
-
-    public function stockAdjustments(): HasMany
-    {
-        // Các chứng từ kiểm kho/điều chỉnh tồn tại kho này.
-        return $this->hasMany(StockAdjustment::class);
-    }
-
-    public function inventoryMovements(): HasMany
-    {
-        // Lịch sử biến động tồn kho xảy ra tại kho này.
-        return $this->hasMany(InventoryMovement::class);
-    }
-
-    public function currentStocks(): HasMany
-    {
-        // Tồn hiện tại của tất cả sản phẩm trong kho này.
-        return $this->hasMany(CurrentStock::class);
-    }
-
-    public function inventories(): HasMany
-    {
-        // Alias tương thích ngược cho current stocks.
-        return $this->hasMany(Inventory::class);
-    }
 }

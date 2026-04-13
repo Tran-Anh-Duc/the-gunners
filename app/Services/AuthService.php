@@ -186,10 +186,8 @@ class AuthService
      * Hiện tại đây là bộ module core của MVP:
      * - products
      * - inventory
-     * - orders
      * - customers
      * - suppliers
-     * - payments
      */
     protected function seedDefaultModules(int $businessId): void
     {
@@ -200,7 +198,7 @@ class AuthService
          * `business_modules` vẫn là điểm extension phù hợp để mở rộng.
          */
         // Mặc định bật các module core để owner mới vào app là có đủ bộ tính năng MVP.
-        foreach (['products', 'inventory', 'orders', 'customers', 'suppliers', 'payments'] as $moduleCode) {
+        foreach (['products', 'inventory', 'customers', 'suppliers'] as $moduleCode) {
             BusinessModule::query()->firstOrCreate(
                 [
                     'business_id' => $businessId,

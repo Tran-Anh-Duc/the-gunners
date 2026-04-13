@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Business dòng vai trò tenant/chu shop.
  *
- * Tat ca bang nghiệp vụ chinh deu map vao business_id,
+ * Tat ca bang master data va membership deu map vao business_id,
  * giup app san sang cho mo hinh nhieu shop đúng chung hệ thống.
  */
 class Business extends Model
@@ -81,45 +81,4 @@ class Business extends Model
         return $this->hasMany(Product::class);
     }
 
-    public function orders(): HasMany
-    {
-        // Don hang ban ra trong business.
-        return $this->hasMany(Order::class);
-    }
-
-    public function stockIns(): HasMany
-    {
-        // Chứng từ nhập kho.
-        return $this->hasMany(StockIn::class);
-    }
-
-    public function stockOuts(): HasMany
-    {
-        // Chứng từ xuất kho.
-        return $this->hasMany(StockOut::class);
-    }
-
-    public function stockAdjustments(): HasMany
-    {
-        // Chứng từ kiểm kho/điều chỉnh tồn.
-        return $this->hasMany(StockAdjustment::class);
-    }
-
-    public function payments(): HasMany
-    {
-        // Phieu thu/chỉ của business.
-        return $this->hasMany(Payment::class);
-    }
-
-    public function inventoryMovements(): HasMany
-    {
-        // Ledger tồn kho - source of truth.
-        return $this->hasMany(InventoryMovement::class);
-    }
-
-    public function currentStocks(): HasMany
-    {
-        // Bang tổng hợp ton hiện tại để doc nhanh.
-        return $this->hasMany(CurrentStock::class);
-    }
 }

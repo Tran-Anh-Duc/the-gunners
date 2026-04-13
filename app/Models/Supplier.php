@@ -5,16 +5,12 @@ namespace App\Models;
 use App\Traits\HasNameSlug;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Nhà cung cấp thuộc một business.
  *
- * Supplier được dùng trong:
- * - chứng từ nhập kho;
- * - phiếu chi hoặc thanh toán ra;
- * - các báo cáo mua hàng hoặc công nợ phải trả về sau.
+ * Supplier được dùng để quản lý danh bạ nhà cung cấp của từng business.
  */
 class Supplier extends Model
 {
@@ -45,15 +41,4 @@ class Supplier extends Model
         return $this->belongsTo(Business::class);
     }
 
-    public function stockIns(): HasMany
-    {
-        // Các phiếu nhập mua hàng từ nhà cung cấp này.
-        return $this->hasMany(StockIn::class);
-    }
-
-    public function payments(): HasMany
-    {
-        // Các phiếu chi hoặc thanh toán ra cho nhà cung cấp này.
-        return $this->hasMany(Payment::class);
-    }
 }

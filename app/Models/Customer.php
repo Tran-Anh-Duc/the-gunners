@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Traits\HasNameSlug;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -14,10 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Khách hàng thuộc một business.
  *
- * Đây là master data dùng cho:
- * - đơn hàng bán ra;
- * - phiếu thu gắn với khách mua;
- * - các báo cáo doanh thu hoặc công nợ về sau.
+ * Đây là master data dùng để quản lý tệp khách hàng theo từng business.
  */
 class Customer extends Model
 {
@@ -47,15 +43,4 @@ class Customer extends Model
         return $this->belongsTo(Business::class);
     }
 
-    public function orders(): HasMany
-    {
-        // Các đơn hàng bán ra cho khách hàng này.
-        return $this->hasMany(Order::class);
-    }
-
-    public function payments(): HasMany
-    {
-        // Các phiếu thu liên quan đến khách hàng này.
-        return $this->hasMany(Payment::class);
-    }
 }

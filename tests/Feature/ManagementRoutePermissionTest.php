@@ -52,36 +52,31 @@ class ManagementRoutePermissionTest extends TestCase
      */
     public function test_inventory_routes_are_protected_by_inventory_permissions(): void
     {
-        // `inventory` gom nhập, xuất, kiểm kho và xem tồn kho.
-        $stockInStoreRoute = app('router')->getRoutes()->match(Request::create('/api/stock-in', 'POST'));
-        $stockOutStoreRoute = app('router')->getRoutes()->match(Request::create('/api/stock-out', 'POST'));
-        $inventoryStocksRoute = app('router')->getRoutes()->match(Request::create('/api/inventory/stocks', 'GET'));
-        $stockAdjustmentStoreRoute = app('router')->getRoutes()->match(Request::create('/api/stock-adjustments', 'POST'));
-        $stockInConfirmRoute = app('router')->getRoutes()->match(Request::create('/api/stock-in/1/confirm', 'POST'));
+        // `inventory` hiện giữ các master data vận hành như kho và đơn vị tính.
+        $warehouseIndexRoute = app('router')->getRoutes()->match(Request::create('/api/warehouses', 'GET'));
+        $warehouseStoreRoute = app('router')->getRoutes()->match(Request::create('/api/warehouses', 'POST'));
+        $unitUpdateRoute = app('router')->getRoutes()->match(Request::create('/api/units/1', 'PUT'));
+        $unitDeleteRoute = app('router')->getRoutes()->match(Request::create('/api/units/1', 'DELETE'));
 
-        $this->assertContains('permission:inventory,create', $stockInStoreRoute->gatherMiddleware());
-        $this->assertContains('permission:inventory,create', $stockOutStoreRoute->gatherMiddleware());
-        $this->assertContains('permission:inventory,create', $stockAdjustmentStoreRoute->gatherMiddleware());
-        $this->assertContains('permission:inventory,update', $stockInConfirmRoute->gatherMiddleware());
-        $this->assertContains('permission:inventory,view', $inventoryStocksRoute->gatherMiddleware());
+        $this->assertContains('permission:inventory,view', $warehouseIndexRoute->gatherMiddleware());
+        $this->assertContains('permission:inventory,create', $warehouseStoreRoute->gatherMiddleware());
+        $this->assertContains('permission:inventory,update', $unitUpdateRoute->gatherMiddleware());
+        $this->assertContains('permission:inventory,delete', $unitDeleteRoute->gatherMiddleware());
     }
 
     /**
-     * Khóa contract phân quyền cho module order và payment.
+     * Khóa contract phân quyền cho master data khách hàng và nhà cung cấp.
      */
-    public function test_order_and_payment_routes_are_protected_by_their_permissions(): void
+    public function test_customer_and_supplier_routes_are_protected_by_their_permissions(): void
     {
-        // `orders` và `payments` là hai module tách quyền riêng để dễ mở rộng theo gói sau này.
-        $orderStoreRoute = app('router')->getRoutes()->match(Request::create('/api/orders', 'POST'));
-        $orderConfirmRoute = app('router')->getRoutes()->match(Request::create('/api/orders/1/confirm', 'POST'));
-        $paymentStoreRoute = app('router')->getRoutes()->match(Request::create('/api/payments', 'POST'));
-        $paymentIndexRoute = app('router')->getRoutes()->match(Request::create('/api/payments', 'GET'));
-        $paymentCancelRoute = app('router')->getRoutes()->match(Request::create('/api/payments/1/cancel', 'POST'));
+        $customerStoreRoute = app('router')->getRoutes()->match(Request::create('/api/customers', 'POST'));
+        $customerDeleteRoute = app('router')->getRoutes()->match(Request::create('/api/customers/1', 'DELETE'));
+        $supplierIndexRoute = app('router')->getRoutes()->match(Request::create('/api/suppliers', 'GET'));
+        $supplierUpdateRoute = app('router')->getRoutes()->match(Request::create('/api/suppliers/1', 'PUT'));
 
-        $this->assertContains('permission:orders,create', $orderStoreRoute->gatherMiddleware());
-        $this->assertContains('permission:orders,update', $orderConfirmRoute->gatherMiddleware());
-        $this->assertContains('permission:payments,create', $paymentStoreRoute->gatherMiddleware());
-        $this->assertContains('permission:payments,view', $paymentIndexRoute->gatherMiddleware());
-        $this->assertContains('permission:payments,update', $paymentCancelRoute->gatherMiddleware());
+        $this->assertContains('permission:customers,create', $customerStoreRoute->gatherMiddleware());
+        $this->assertContains('permission:customers,delete', $customerDeleteRoute->gatherMiddleware());
+        $this->assertContains('permission:suppliers,view', $supplierIndexRoute->gatherMiddleware());
+        $this->assertContains('permission:suppliers,update', $supplierUpdateRoute->gatherMiddleware());
     }
 }
