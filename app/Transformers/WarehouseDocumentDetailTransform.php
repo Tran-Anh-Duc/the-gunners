@@ -55,7 +55,9 @@
 						'email' => $entry->approver->email,
 					]
 					: null,
-				'approved_at' => $entry->approved_at,
+				'approved_at' => $entry->approved_at
+					? \Carbon\Carbon::parse($entry->approved_at)->format('d/m/Y H:i')
+					: null,
 				'details' => $entry->relationLoaded('details')
 					? $entry->details->map(function ($detail): array {
 						return [
@@ -94,7 +96,9 @@
 				'created_at' => $entry->created_at
 					? \Carbon\Carbon::parse($entry->created_at)->format('d/m/Y H:i')
 					: null,
-				'updated_at' => $entry->updated_at,
+				'updated_at' => $entry->updated_at
+					? \Carbon\Carbon::parse($entry->updated_at)->format('d/m/Y H:i')
+					: null,
 				'deleted_at' => $entry->deleted_at,
 			];
 		}

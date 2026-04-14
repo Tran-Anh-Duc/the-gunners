@@ -66,7 +66,9 @@
 				'created_at' => $entry->created_at
 					? \Carbon\Carbon::parse($entry->created_at)->format('d/m/Y H:i')
 					: null,
-				'updated_at' => $entry->updated_at,
+				'updated_at' => $entry->updated_at
+					? \Carbon\Carbon::parse($entry->updated_at)->format('d/m/Y H:i')
+					: null,
 				'deleted_at' => $entry->deleted_at,
 			];
 		}
