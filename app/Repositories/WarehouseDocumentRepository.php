@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\WarehouseDocument;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\BusinessUser;
+use Illuminate\Database\Eloquent\Model;
 
 class WarehouseDocumentRepository extends BaseRepository
 {
@@ -68,6 +69,17 @@ class WarehouseDocumentRepository extends BaseRepository
 		$query->where('business_id', $businessId);
 		$query->select('warehouse_documents.*');
 		return $query->findOrFail($id);
+	}
+	
+	public function createForBusiness(int $businessId, array $attributes)
+	{
+		$query = $this->model->newQuery();
+		
+		$data = array_merge($attributes, [
+			'business_id' => $businessId,
+		]);
+		
+		return $query->create($data);
 	}
 	
 }

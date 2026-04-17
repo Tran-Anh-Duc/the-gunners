@@ -14,7 +14,7 @@ class StoreWarehouseDocumentRequest extends BaseBusinessRequest
         return [
             'business_id' => $this->businessRules(),
             'document_code' => [
-                'required',
+                'nullable',
                 'string',
                 'max:255',
                 Rule::unique('warehouse_documents', 'document_code')->where(

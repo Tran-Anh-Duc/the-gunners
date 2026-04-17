@@ -2,14 +2,15 @@
 
 namespace App\Services;
 
+
 use App\Repositories\WarehouseDocumentDetailRepository;
 use App\Repositories\WarehouseDocumentRepository;
-use App\Repositories\WarehouseRepository;
 use App\Support\BusinessContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
-class WarehouseDocumentService
+class WarehouseDocumentService extends BaseBusinessCrudService
 {
 	protected array $with = [
 		'business',
@@ -34,7 +35,8 @@ class WarehouseDocumentService
 	
 	public function __construct(
 		private readonly WarehouseDocumentRepository $warehouseDocumentRepository,
-		private readonly BusinessContext             $businessContext,
+		private readonly WarehouseDocumentDetailRepository $warehouseDocumentDetailRepository,
+		protected BusinessContext                    $businessContext,
 	)
 	{
 	}
@@ -65,6 +67,48 @@ class WarehouseDocumentService
 	{
 		$businessId = $this->businessContext->resolveBusinessId();
 		return $this->warehouseDocumentRepository->findForBusinessOrFail($id, $businessId);
+	}
+	
+	public function create(array $data): Model
+	{
+		return DB::transaction(function () use ($data) {
+			$businessId = $this->resolveBusinessId($data);
+			
+			$details = $data['details'] ?? [];
+			
+			$payload = $this->payloadForCreate(
+				array_diff_key($data, ['details' => true]),
+				$businessId
+			);
+			
+			$document = $this->warehouseDocumentRepository->createForBusiness($businessId, $payload);
+			
+			if (!empty($details)) {
+				$this->warehouseDocumentDetailRepository->createManyForDocument(
+					$document->id,
+					$businessId,
+					$details
+				);
+			}
+			
+			return $document->load($this->with);
+		});
+	}
+	
+	protected function payloadForCreate(array $data, int $businessId): array
+	{
+		return [
+			'business_id' => $businessId,
+			'document_type' => $data['document_type'] ?? null,
+			'warehouse_id' => $data['warehouse_id'] ?? null,
+			'document_date' => $data['document_date'] ?? null,
+			'status' => $data['status'] ?? 'draft',
+			'reference_code' => $data['reference_code'] ?? null,
+			'note' => $data['note'] ?? null,
+			'approved_by' => $data['approved_by'] ?? null,
+			'approved_at' => $data['approved_at'] ?? null,
+			'created_by' => auth()->id(),
+		];
 	}
 	
 }

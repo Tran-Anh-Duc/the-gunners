@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\BusinessSequenceGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -49,7 +50,33 @@ class WarehouseDocument extends Model
             'total_amount' => 'decimal:2',
         ];
     }
-
+	
+	protected static function booted(): void
+	{
+		static::creating(function (self $document): void {
+			if (!empty($document->document_code) || empty($document->business_id)) {
+				return;
+			}
+			
+			$prefix = match ($document->document_type) {
+				'import' => 'WH-IMPORT',
+				'export' => 'WH-EXPORT',
+				default => null,
+			};
+			
+			if ($prefix === null) {
+				return;
+			}
+			
+			$document->document_code = BusinessSequenceGenerator::nextFormatted(
+				self::class,
+				(int)$document->business_id,
+				'document_code_' . $document->document_type,
+				$prefix
+			);
+		});
+	}
+	
     public function business(): BelongsTo
     {
         return $this->belongsTo(Business::class);
