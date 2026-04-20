@@ -50,7 +50,7 @@ class ProductController extends ApiController
                 'Fetched successfully.',
                 'list_success',
                 self::HTTP_OK,
-                $query->select(['id', 'name','unit_id','category_id'])->get()
+                $query->select(['id', 'name','sku','unit_id','category_id'])->get()
             );
         }
 
