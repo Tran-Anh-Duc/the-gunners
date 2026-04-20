@@ -29,8 +29,19 @@ class WarehouseController extends ApiController
      */
     public function index(WarehouseIndexRequest $request): JsonResponse
     {
-        [, $query] = $this->warehouseService->paginate($request->validated());
-
+        [, $query] = $this->warehouseService->paginate(
+	        array_merge($request->validated(),$request->only($this->warehouseService->searchableFilters()))
+        );
+		
+		if ($request->boolean('is_option')) {
+            return $this->successResponse(
+                'Fetched successfully.',
+                'list_success',
+                self::HTTP_OK,
+                $query->select(['id', 'name','code'])->get()
+            );
+        }
+		
         return $this->successResponse(
             'Fetched successfully.',
             'list_success',
