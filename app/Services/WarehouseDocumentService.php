@@ -3,15 +3,18 @@
 namespace App\Services;
 
 
+use App\Models\WarehouseDocument;
 use App\Repositories\WarehouseDocumentDetailRepository;
 use App\Repositories\WarehouseDocumentRepository;
 use App\Support\BusinessContext;
+use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class WarehouseDocumentService extends BaseBusinessCrudService
 {
+	use ApiResponse;
 	protected array $with = [
 		'business',
 		'warehouse',
@@ -90,6 +93,38 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 					$details
 				);
 			}
+			
+			return $document->load($this->with);
+		});
+	}
+	
+	/**
+	 * @param int $id
+	 * @param array $data
+	 * @return Model
+	 */
+	public function update(int $id, array $data): Model
+	{
+		return DB::transaction(function () use ($id, $data) {
+			$businessId = $this->resolveBusinessId($data);
+			$details = $data['details'] ?? [];
+			
+			$payload = $this->payloadForCreate(
+				array_diff_key($data, ['details' => true]),
+				$businessId
+			);
+			
+			$document = $this->warehouseDocumentRepository->updateForBusiness(
+				$businessId,
+				$payload,
+				$id
+			);
+			
+			$this->warehouseDocumentDetailRepository->updateAndCreateManyForDocument(
+				$document->id,
+				$businessId,
+				$details
+			);
 			
 			return $document->load($this->with);
 		});

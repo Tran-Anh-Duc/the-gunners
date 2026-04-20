@@ -82,4 +82,19 @@ class WarehouseDocumentRepository extends BaseRepository
 		return $query->create($data);
 	}
 	
+	public function updateForBusiness(int $businessId, array $attributes,int $id)
+	{
+		$document = $this->model->newQuery()
+			->where('business_id', $businessId)
+			->findOrFail($id);
+		
+		unset($attributes['business_id'], $attributes['document_code'], $attributes['created_by']);
+		$attributes['updated_by'] = auth()->id();
+		
+		$document->update($attributes);
+		
+		return $document->refresh();
+	}
+
+	
 }
