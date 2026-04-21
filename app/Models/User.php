@@ -119,6 +119,7 @@ class User extends Authenticatable
                 'suppliers.delete',
                 'warehouse_documents.view',
                 'warehouse_documents.create',
+                'warehouse_documents.update',
             ],
             'staff' => [
                 'products.view',
