@@ -47,20 +47,17 @@ class WarehouseDocumentDetailRepository extends BaseRepository
 	 *
 	 * @return array `true` nếu thao tác thành công hoặc danh sách rỗng.
 	 */
-	public function updateAndCreateManyForDocument(int $documentId, int $businessId, array $details): array
+	public function replaceRowsForDocument(int $documentId, array $rows): bool
 	{
-		
-		unset($businessId);
-
-		if (empty($details)) {
-			return true;
-		}
-		
 		$this->model->newQuery()
 			->where('warehouse_document_id', $documentId)
 			->delete();
 		
-		return $this->insertManyForDocument($documentId, $details);
+		if (empty($rows)) {
+			return true;
+		}
+		
+		return $this->model->newQuery()->insert($rows);
 	}
 	
 	

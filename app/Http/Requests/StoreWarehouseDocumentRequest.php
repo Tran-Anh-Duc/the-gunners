@@ -25,7 +25,11 @@ class StoreWarehouseDocumentRequest extends BaseBusinessRequest
                 WarehouseDocument::TYPE_IMPORT,
                 WarehouseDocument::TYPE_EXPORT,
             ])],
-            'warehouse_id' => ['required', 'integer', Rule::exists('warehouses', 'id')],
+            'warehouse_id' => ['required', 'integer',
+	            Rule::exists('warehouses', 'id')->where(
+					fn ($query) => $query->where('business_id', $businessId)
+	            )
+            ],
             'document_date' => ['required', 'date'],
             'status' => ['nullable', Rule::in([
                 WarehouseDocument::STATUS_DRAFT,
@@ -37,9 +41,21 @@ class StoreWarehouseDocumentRequest extends BaseBusinessRequest
             'approved_by' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'approved_at' => ['nullable', 'date'],
             'details' => ['nullable', 'array'],
-            'details.*.product_id' => ['required_with:details', 'integer', Rule::exists('products', 'id')],
+            'details.*.product_id' => ['required_with:details', 'integer',
+	            Rule::exists('products', 'id')->where(
+					function ($query)  use ($businessId) {
+						return $query->where('business_id', $businessId);
+					}
+	            )
+            ],
             'details.*.product_name' => ['nullable', 'string', 'max:255'],
-            'details.*.unit_id' => ['required_with:details', 'integer', Rule::exists('units', 'id')],
+            'details.*.unit_id' => ['required_with:details', 'integer',
+	            Rule::exists('units', 'id')->where(
+					function ($query)  use ($businessId) {
+						return $query->where('business_id', $businessId);
+					}
+	            )
+            ],
             'details.*.unit_name' => ['nullable', 'string', 'max:255'],
             'details.*.quantity' => ['required_with:details', 'numeric', 'min:0'],
             'details.*.unit_price' => ['required_with:details', 'numeric', 'min:0'],
@@ -48,6 +64,14 @@ class StoreWarehouseDocumentRequest extends BaseBusinessRequest
             'details.*.tax_price' => ['nullable', 'numeric', 'min:0'],
             'details.*.total_price' => ['nullable', 'numeric', 'min:0'],
             'details.*.note' => ['nullable', 'string'],
+        ];
+    }
+	public function messages(): array
+    {
+        return [
+            'warehouse_id.exists' => 'The selected value is invalid for the current business.',
+            'details.*.product_id.exists' => 'The selected value is invalid for the current business.',
+            'details.*.unit_id.exists' => 'The selected value is invalid for the current business.',
         ];
     }
 }
