@@ -95,6 +95,22 @@ class WarehouseDocumentRepository extends BaseRepository
 		
 		return $document->refresh();
 	}
+	
+	public function existsConfirmedDocumentForProductInWarehouse(int $businessId,int $warehouseId,int $productId): bool
+	{
+		$query = $this->model->newQuery();
+		$query->where('business_id', $businessId)
+			->where('warehouse_id', $warehouseId)
+			->where('status', WarehouseDocument::STATUS_CONFIRMED)
+			->wherehas('details', function (Builder $query) use ($productId) {
+				$query->where('product_id', $productId);
+			});
+		return $query->exists();
+	}
+	
+	
+	
+	
 
 	
 }

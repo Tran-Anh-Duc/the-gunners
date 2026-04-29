@@ -44,6 +44,16 @@ return [
         'restore_failed'  => 'Failed to restore user status.',
         'cannot_delete_in_use'  => 'This user status is currently assigned to users and cannot be deleted.',
     ],
+    'inventory_opening' => [
+        'list_success' => 'Inventory opening list fetched successfully.',
+        'show_success' => 'Inventory opening fetched successfully.',
+        'create_success' => 'Inventory opening created successfully.',
+        'update_success' => 'Inventory opening updated successfully.',
+        'delete_success' => 'Inventory opening deleted successfully.',
+        'locked_for_update' => 'Cannot update inventory opening because confirmed warehouse documents already exist.',
+        'locked_for_delete' => 'Cannot delete inventory opening because confirmed warehouse documents already exist.',
+        'duplicate_opening' => 'An opening stock already exists for this business, warehouse, and product.',
+    ],
 
 
 ];

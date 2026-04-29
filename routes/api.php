@@ -9,6 +9,7 @@
 	use App\Http\Controllers\Api\UserController;
 	use App\Http\Controllers\Api\WarehouseController;
 	use App\Http\Controllers\Api\WarehouseDocumentController;
+	use App\Http\Controllers\Api\InventoryOpeningController;
 	use App\Http\Controllers\TestController;
 
 // Nhóm xác thực tách riêng vì vừa có route public, vừa có route yêu cầu token.
@@ -85,6 +86,14 @@
 		Route::get('/{id}', [WarehouseDocumentController::class, 'show'])->middleware('permission:warehouse_documents,view');
 		Route::put('/{id}', [WarehouseDocumentController::class, 'update'])->middleware('permission:warehouse_documents,update');
 		Route::delete('/{id}', [WarehouseDocumentController::class, 'destroy'])->middleware('permission:warehouse_documents,delete');
+	});
+
+	Route::middleware('jwt')->prefix('inventory-openings')->group(function () {
+		Route::get('/', [InventoryOpeningController::class, 'index'])->middleware('permission:inventory,view');
+		Route::post('/', [InventoryOpeningController::class, 'store'])->middleware('permission:inventory,create');
+		Route::get('/{id}', [InventoryOpeningController::class, 'show'])->middleware('permission:inventory,view');
+		Route::put('/{id}', [InventoryOpeningController::class, 'update'])->middleware('permission:inventory,update');
+		Route::delete('/{id}', [InventoryOpeningController::class, 'destroy'])->middleware('permission:inventory,delete');
 	});
 	
 // Route test thủ công được giữ lại để debug nhanh trong môi trường local.

@@ -47,5 +47,15 @@ return [
         'restore_failed'  => 'Không thể khôi phục trạng thái người dùng.',
         'cannot_delete_in_use'=> 'Trạng thái người dùng đang được sử dụng, không thể xóa.',
     ],
+    'inventory_opening' => [
+        'list_success' => 'Lấy danh sách tồn đầu kỳ thành công.',
+        'show_success' => 'Lấy chi tiết tồn đầu kỳ thành công.',
+        'create_success' => 'Tạo tồn đầu kỳ thành công.',
+        'update_success' => 'Cập nhật tồn đầu kỳ thành công.',
+        'delete_success' => 'Xóa tồn đầu kỳ thành công.',
+        'locked_for_update' => 'Không thể cập nhật tồn đầu kỳ vì đã có chứng từ kho xác nhận.',
+        'locked_for_delete' => 'Không thể xóa tồn đầu kỳ vì đã có chứng từ kho xác nhận.',
+        'duplicate_opening' => 'Đã tồn tại tồn đầu kỳ cho business, kho và sản phẩm này.',
+    ],
 
 ];
