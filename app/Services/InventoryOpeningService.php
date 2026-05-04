@@ -11,6 +11,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Ramsey\Collection\Collection;
+use Carbon\Carbon;
 
 class InventoryOpeningService extends BaseBusinessCrudService
 {
@@ -43,10 +47,59 @@ class InventoryOpeningService extends BaseBusinessCrudService
 		parent::__construct($businessContext);
 	}
 	
-	public function listQuery(array $filters): Builder
+	/**
+	 * @throws ContainerExceptionInterface
+	 * @throws NotFoundExceptionInterface
+	 */
+	public function groupedByWarehouse(array $filters): array
 	{
 		$businessId = $this->businessContext->resolveBusinessId($filters['business_id'] ?? null);
-		return $this->inventoryOpeningRepository->queryForBusiness($businessId, $filters);
+		
+		$perPage = (int)request()->get('per_page', 10);
+		$page = (int)request()->get('page', 1);
+		
+		$paginator = $this->inventoryOpeningRepository
+			->paginateWarehouseIdsForOpening($businessId, $filters, $perPage, $page);
+		
+		$warehouseIds = $paginator->getCollection()
+			->pluck('warehouse_id')
+			->values();
+		$openings = $this->inventoryOpeningRepository->getGroupedByWarehouse($businessId, $filters, $warehouseIds->all());
+		
+		$items = collect($openings)->map(function ($rows, $warehouseId) {
+			$first = collect($rows)->first();
+			return [
+				'warehouse_id' => (int)$warehouseId,
+				'warehouse' => ($first['warehouse'])->toArray() ?? null,
+				'opening_date' => !empty($first['opening_date'])
+					? Carbon::parse($first['opening_date'])->format('Y-m-d')
+					: null,
+				'total_quantity' => collect($rows)->sum(fn($row) => (float)$row['quantity']),
+				
+				'total_cost' => collect($rows)->sum(fn($row) => (float)$row['total_cost']),
+				'details' => collect($rows)->map(function ($row) {
+					return [
+						'id' => $row['id'],
+						'product_id' => $row['product_id'],
+						'product_name' => $row['product_name'],
+						'unit_id' => $row['unit_id'],
+						'unit_name' => $row['unit_name'],
+						'quantity' => $row['quantity'],
+						'unit_cost' => $row['unit_cost'],
+						'total_cost' => $row['total_cost'],
+						'note' => $row['note'],
+					];
+				})->values(),
+			];
+		})->values();
+		
+		return [
+			'items' => $items,
+			'current_page' => $paginator->currentPage(),
+			'last_page' => $paginator->lastPage(),
+			'per_page' => $paginator->perPage(),
+			'total' => $paginator->total(),
+		];
 	}
 	
 	public function create(array $data): InventoryOpening

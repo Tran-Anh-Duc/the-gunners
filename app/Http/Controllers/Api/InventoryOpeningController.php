@@ -34,12 +34,9 @@ class InventoryOpeningController extends ApiController
 	 */
 	public function index(InventoryOpeningIndexRequest $request): JsonResponse
     {
-		
-		$pagination = $this->paginate(
-			query: $this->inventoryOpeningService->listQuery($request->validated()),
-			transformer: $this->inventoryOpeningTransformer,
-			defaultPerPage: 10
-		);
+	    $pagination = $this->inventoryOpeningService->groupedByWarehouse(
+		    $request->validated()
+	    );
 		
        return $this->successResponse(
             message: __('messages.inventory_opening.list_success'),
