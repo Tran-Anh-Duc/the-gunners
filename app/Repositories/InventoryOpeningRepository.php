@@ -13,12 +13,12 @@ class InventoryOpeningRepository extends BaseRepository
 	{
 		$this->model = $model;
 	}
-	
+
 	public function getModel():string
 	{
 		return InventoryOpening::class;
 	}
-	
+
 	public function paginateWarehouseIdsForOpening(
 		int   $businessId,
 		array $filters,
@@ -36,39 +36,39 @@ class InventoryOpeningRepository extends BaseRepository
 			->orderBy('warehouse_id')
 			->paginate($perPage, ['*'], 'page', $page);
 	}
-	
+
 	private function applyFilters(Builder $query, array $filters): Builder
 	{
 		if (!empty($filters['product_id'])) {
 			$query->where('product_id', $filters['product_id']);
 		}
-		
+
 		if (!empty($filters['warehouse_id'])) {
 			$query->where('warehouse_id', $filters['warehouse_id']);
 		}
-		
+
 		if (!empty($filters['opening_date_from'])) {
 			$query->whereDate('opening_date', '>=', $filters['opening_date_from']);
 		}
-		
+
 		if (!empty($filters['opening_date_to'])) {
 			$query->whereDate('opening_date', '<=', $filters['opening_date_to']);
 		}
-		
+
 		return $query;
 	}
-	
+
 	public function queryForBusiness(int $businessId, array $filters = []): Builder
 	{
 		$query = $this->model->newQuery()
 			->with(['business', 'warehouse', 'creator', 'updater'])
 			->where('business_id', $businessId)
 			->select('inventory_openings.*');
-		
+
 		return $this->applyFilters($query, $filters)
 			->orderByDesc('inventory_openings.id');
 	}
-	
+
 	public function getGroupedByWarehouse(
 		int   $businessId,
 		array $filters = [],
@@ -79,29 +79,29 @@ class InventoryOpeningRepository extends BaseRepository
 			->with(['business', 'warehouse', 'creator', 'updater'])
 			->where('business_id', $businessId)
 			->select('inventory_openings.*');
-		
+
 		if (!empty($warehouseIds)) {
 			$query->whereIn('warehouse_id', $warehouseIds);
 		}
-		
+
 		return $this->applyFilters($query, $filters)
 			->orderBy('warehouse_id')
 			->orderBy('inventory_openings.id')
 			->get()
 			->groupBy('warehouse_id');
 	}
-	
+
 	public function createForBusiness(int $businessId, array $attributes)
 	{
 		$query = $this->model->newQuery();
-		
+
 		$data = array_merge($attributes, [
 			'business_id' => $businessId,
 		]);
-		
+
 		return $query->create($data);
 	}
-	
+
 	public function updateForBusiness(int $businessId, array $attributes, int $id)
 	{
 		$document = $this->model->newQuery()
@@ -110,16 +110,17 @@ class InventoryOpeningRepository extends BaseRepository
 		unset($attributes['business_id']);
 		$attributes['updated_by'] = auth()->id();
 		$document->update($attributes);
-		
+
 		return $document->refresh();
 	}
-	
+
 	public function findForBusinessOrFail(int $businessId, int $id)
 	{
 		return $this->model->newQuery()
+            ->with(['warehouse','product'])
 			->where('business_id', $businessId)
 			->where('id', $id)
 			->firstOrFail();
 	}
-	
+
 }

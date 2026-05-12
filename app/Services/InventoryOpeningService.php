@@ -19,7 +19,7 @@ use Carbon\Carbon;
 class InventoryOpeningService extends BaseBusinessCrudService
 {
 	use ApiResponse;
-	
+
 	protected array $with = [
 		'business',
 		'warehouse',
@@ -28,7 +28,7 @@ class InventoryOpeningService extends BaseBusinessCrudService
 		'product',
 		'unit'
 	];
-	
+
 	protected array $searchable = [
 		'keyword',
 		'warehouse_id',
@@ -37,7 +37,7 @@ class InventoryOpeningService extends BaseBusinessCrudService
 		'inventory_date_from',
 		'inventory_date_to',
 	];
-	
+
 	public function __construct(
 		BusinessContext                              $businessContext,
 		private readonly InventoryOpeningRepository  $inventoryOpeningRepository,
@@ -46,7 +46,7 @@ class InventoryOpeningService extends BaseBusinessCrudService
 	{
 		parent::__construct($businessContext);
 	}
-	
+
 	/**
 	 * @throws ContainerExceptionInterface
 	 * @throws NotFoundExceptionInterface
@@ -54,18 +54,18 @@ class InventoryOpeningService extends BaseBusinessCrudService
 	public function groupedByWarehouse(array $filters): array
 	{
 		$businessId = $this->businessContext->resolveBusinessId($filters['business_id'] ?? null);
-		
+
 		$perPage = (int)request()->get('per_page', 10);
 		$page = (int)request()->get('page', 1);
-		
+
 		$paginator = $this->inventoryOpeningRepository
 			->paginateWarehouseIdsForOpening($businessId, $filters, $perPage, $page);
-		
+
 		$warehouseIds = $paginator->getCollection()
 			->pluck('warehouse_id')
 			->values();
 		$openings = $this->inventoryOpeningRepository->getGroupedByWarehouse($businessId, $filters, $warehouseIds->all());
-		
+
 		$items = collect($openings)->map(function ($rows, $warehouseId) {
 			$first = collect($rows)->first();
 			return [
@@ -75,7 +75,7 @@ class InventoryOpeningService extends BaseBusinessCrudService
 					? Carbon::parse($first['opening_date'])->format('Y-m-d')
 					: null,
 				'total_quantity' => collect($rows)->sum(fn($row) => (float)$row['quantity']),
-				
+
 				'total_cost' => collect($rows)->sum(fn($row) => (float)$row['total_cost']),
 				'details' => collect($rows)->map(function ($row) {
 					return [
@@ -92,7 +92,7 @@ class InventoryOpeningService extends BaseBusinessCrudService
 				})->values(),
 			];
 		})->values();
-		
+
 		return [
 			'items' => $items,
 			'current_page' => $paginator->currentPage(),
@@ -101,7 +101,7 @@ class InventoryOpeningService extends BaseBusinessCrudService
 			'total' => $paginator->total(),
 		];
 	}
-	
+
 	public function create(array $data): InventoryOpening
 	{
 		return DB::transaction(function () use ($data) {
@@ -109,22 +109,22 @@ class InventoryOpeningService extends BaseBusinessCrudService
 			$productId = $data['product_id'] ?? null;
 			$warehouseId = $data['warehouse_id'] ?? null;
 			$resultCheckExitWareHouseDocument = $this->existsConfirmedDocumentForProductInWarehouse($businessId, $warehouseId, $productId);
-			
+
 			if ($resultCheckExitWareHouseDocument) {
 				throw ValidationException::withMessages([
 					'product_id' => __('messages.inventory.opening_exists_movement'),
 				]);
 			}
 			$payload = $this->payloadForSave($data, $businessId, false);
-			
+
 			$document = $this->inventoryOpeningRepository->createForBusiness($businessId, $payload);
-			
+
 			return $document->load($this->with);
-			
+
 		});
-		
+
 	}
-	
+
 	public function update(int $id, array $data): InventoryOpening
 	{
 		return DB::transaction(function () use ($id, $data) {
@@ -132,33 +132,33 @@ class InventoryOpeningService extends BaseBusinessCrudService
 			$productId = $data['product_id'] ?? null;
 			$warehouseId = $data['warehouse_id'] ?? null;
 			$resultCheckExitWareHouseDocument = $this->existsConfirmedDocumentForProductInWarehouse($businessId, $warehouseId, $productId);
-			
+
 			if ($resultCheckExitWareHouseDocument) {
 				throw ValidationException::withMessages([
 					'product_id' => __('messages.inventory.opening_exists_movement'),
 				]);
 			}
 			$model = $this->inventoryOpeningRepository->findForBusinessOrFail($businessId, $id);
-			
+
 			$payload = $this->payloadForSave($data, $businessId, true, $model);
-			
+
 			$document = $this->inventoryOpeningRepository->updateForBusiness($businessId, $payload, $id);
-			
+
 			return $document->load($this->with);
 		});
 	}
-	
+
 	public function show(int $id, array $data): Model
 	{
 		$businessId = $this->businessContext->resolveBusinessId();
 		return $this->inventoryOpeningRepository->findForBusinessOrFail($businessId,$id);
 	}
-	
+
 	protected function payloadForSave(array $data, int $businessId, bool $isUpdate = false, ?InventoryOpening $model = null): array
 	{
 		$quantity = (float)($data['quantity'] ?? $model?->quantity ?? 0);
 		$unitCost = (float)($data['unit_cost'] ?? $model?->unit_cost ?? 0);
-		
+
 		$payload = [
 			'business_id' => $businessId,
 			'warehouse_id' => $data['warehouse_id'] ?? $model->warehouse_id,
@@ -172,25 +172,25 @@ class InventoryOpeningService extends BaseBusinessCrudService
 			'total_cost' => round($quantity * $unitCost, 2),
 			'note' => $data['note'] ?? $model->note,
 		];
-		
+
 		if ($isUpdate) {
 			$payload['updated_by'] = auth()->id();
 		} else {
 			$payload['created_by'] = auth()->id();
 		}
-		
+
 		return $payload;
 	}
-	
+
 	protected function existsConfirmedDocumentForProductInWarehouse(int $businessId, int $warehouseId, int $productId): bool
 	{
 		return $this->warehouseDocumentRepository->existsConfirmedDocumentForProductInWarehouse(
 			$businessId, $warehouseId, $productId
 		);
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 }

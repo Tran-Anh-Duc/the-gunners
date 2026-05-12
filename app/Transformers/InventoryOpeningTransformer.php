@@ -24,6 +24,13 @@ class InventoryOpeningTransformer extends TransformerAbstract
                     'name' => $entry->warehouse->name,
                 ]
                 : null,
+            'product' => $entry->relationLoaded('product') && $entry->product
+                ? [
+                    'id' => $entry->product->id,
+                    'code' => $entry->product->name_slug,
+                    'name' => $entry->product->name,
+                ]
+                : null,
             'product_id' => $entry->product_id,
             'product_name' => $entry->product_name,
             'unit_id' => $entry->unit_id,
