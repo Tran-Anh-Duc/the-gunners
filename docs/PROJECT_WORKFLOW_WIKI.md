@@ -254,6 +254,214 @@ Ví dụ:
 
 ---
 
+## 5.4. Workflow Inventory Engine
+
+Inventory Engine là lớp nghiệp vụ chịu trách nhiệm ghi nhận và tổng hợp tồn kho.
+
+Module này được thiết kế dựa trên 2 bảng chính:
+
+- `inventory_stock_movements`: lịch sử biến động tồn kho, đóng vai trò source of truth
+- `inventory_stocks`: snapshot tồn kho hiện tại, dùng để query nhanh
+
+### Các nguồn dữ liệu tồn kho hiện có
+
+Các nguồn nghiệp vụ hiện tại có thể tạo biến động tồn kho:
+
+- `inventory_openings`: tồn đầu kỳ theo business, kho và sản phẩm
+- `warehouse_documents`: phiếu kho tổng
+- `warehouse_document_details`: dòng chi tiết của phiếu kho
+
+`warehouse_documents` hiện có 2 loại:
+
+- `import`: nhập kho
+- `export`: xuất kho
+
+Trạng thái chứng từ hiện tại:
+
+- `draft`: bản nháp, chưa ảnh hưởng tồn kho
+- `confirmed`: đã xác nhận, được phép ảnh hưởng tồn kho
+- `cancelled`: đã hủy, không ảnh hưởng tồn kho
+
+### Bảng inventory_stock_movements
+
+`inventory_stock_movements` dùng để lưu lịch sử biến động tồn kho.
+
+Các field chính:
+
+- `business_id`
+- `warehouse_id`
+- `product_id`
+- `unit_id`
+- `source_type`
+- `source_id`
+- `source_line_id`
+- `movement_type`
+- `movement_date`
+- `posted_at`
+- `quantity_delta`
+- `unit_cost`
+- `value_delta`
+- `created_by`
+- `created_at`
+- `updated_at`
+
+Cách hiểu nhanh:
+
+- mỗi record là một lần thay đổi tồn kho;
+- bảng này dùng cho audit và truy vết nghiệp vụ;
+- bảng này có thể dùng để rebuild lại `inventory_stocks`;
+- bảng này không dùng làm nguồn chính để query tồn kho hiện tại;
+- bảng này không nên soft delete;
+- bảng này không nên chỉnh sửa trực tiếp;
+- khi cần hủy nghiệp vụ trong tương lai, hệ thống nên tạo reversal movement thay vì sửa hoặc xóa movement cũ.
+
+### Bảng inventory_stocks
+
+`inventory_stocks` dùng để lưu snapshot tồn kho hiện tại.
+
+Các field chính:
+
+- `business_id`
+- `warehouse_id`
+- `product_id`
+- `quantity_on_hand`
+- `avg_unit_cost`
+- `inventory_value`
+- `last_movement_id`
+- `last_movement_at`
+- `created_at`
+- `updated_at`
+
+Cách hiểu nhanh:
+
+- bảng này dùng để query tồn kho nhanh;
+- bảng này dùng cho dashboard;
+- bảng này dùng cho inventory reports;
+- bảng này là dữ liệu tổng hợp từ movement ledger;
+- nếu bị lệch, bảng này có thể rebuild từ `inventory_stock_movements`.
+
+### Posting tồn đầu kỳ
+
+Luồng posting tồn đầu kỳ:
+
+```text
+Inventory Opening
+↓
+Inventory Posting
+↓
+inventory_stock_movements
+↓
+inventory_stocks
+```
+
+Khi tồn đầu kỳ được post:
+
+1. Hệ thống tạo movement với `source_type = inventory_opening`.
+2. `source_id` là ID của record trong `inventory_openings`.
+3. `source_line_id` có thể dùng chính ID của record tồn đầu kỳ vì tồn đầu kỳ hiện đang là một dòng theo sản phẩm.
+4. `quantity_delta` là số lượng tồn đầu kỳ.
+5. `unit_cost` lấy từ đơn giá tồn đầu kỳ.
+6. `value_delta` bằng `quantity_delta * unit_cost`.
+7. Sau khi tạo movement, hệ thống cập nhật snapshot trong `inventory_stocks`.
+
+### Posting phiếu kho
+
+Luồng posting phiếu kho:
+
+```text
+Warehouse Document (confirmed)
+↓
+Inventory Posting
+↓
+inventory_stock_movements
+↓
+inventory_stocks
+```
+
+Khi phiếu kho được confirmed:
+
+1. Hệ thống đọc header từ `warehouse_documents`.
+2. Hệ thống đọc từng dòng từ `warehouse_document_details`.
+3. Mỗi detail sinh ra một movement riêng.
+4. `source_type = warehouse_document`.
+5. `source_id` là ID của `warehouse_documents`.
+6. `source_line_id` là ID của `warehouse_document_details`.
+7. Nếu `document_type = import`, `quantity_delta` là số dương.
+8. Nếu `document_type = export`, `quantity_delta` là số âm.
+9. Sau khi tạo movement, hệ thống cập nhật snapshot trong `inventory_stocks`.
+
+### Nguyên tắc posting
+
+Các nguyên tắc bắt buộc:
+
+- chỉ chứng từ `confirmed` mới được affect stock;
+- chứng từ `draft` không affect stock;
+- chứng từ `cancelled` không affect stock;
+- tất cả posting phải chạy trong database transaction;
+- movement phải được tạo trước;
+- stock snapshot phải được cập nhật sau;
+- nếu transaction fail thì rollback toàn bộ;
+- không ghi movement trùng cho cùng một nguồn nghiệp vụ;
+- không update trực tiếp `inventory_stocks` từ controller.
+
+### Source type và source line
+
+Các `source_type` được định hướng cho Inventory Engine:
+
+- `inventory_opening`
+- `warehouse_document`
+- `stock_adjustment`
+- `stock_transfer`
+
+Quy ước:
+
+- `source_id` là ID của record nguồn;
+- `source_line_id` là ID của dòng chi tiết tạo ra movement;
+- với `warehouse_document`, `source_line_id` là ID của `warehouse_document_details`;
+- với `inventory_opening`, `source_line_id` có thể dùng chính ID của `inventory_openings`.
+
+Điểm quan trọng:
+
+- `source_id` một mình không đủ để chống ghi trùng movement;
+- `source_line_id` giúp trace movement về đúng dòng nghiệp vụ;
+- unique key nên dựa trên `business_id`, `source_type`, `source_id`, `source_line_id`, `warehouse_id`, `product_id`.
+
+### Roadmap Inventory Engine
+
+Phase 1:
+
+- tạo `inventory_stock_movements`;
+- tạo `inventory_stocks`;
+- xây dựng inventory posting service;
+- posting tồn đầu kỳ;
+- posting warehouse document.
+
+Phase 2:
+
+- stock adjustment;
+- stock transfer;
+- reversal movement;
+- inventory reconciliation.
+
+Phase 3:
+
+- costing engine;
+- weighted average cost;
+- FIFO/LIFO evaluation;
+- inventory valuation report.
+
+### Điểm cần chốt trước khi production
+
+Một số workflow hiện tại cần được chốt lại trước khi Inventory Engine affect stock thật:
+
+- `inventory_openings` đã hoàn thành create/update, nhưng delete chưa implement chính thức;
+- `warehouse_documents` hiện có thể update khi đã `confirmed`, cần khóa hoặc chuyển sang cơ chế reversal;
+- `warehouse_document_details` hiện có thể replace rows khi update, cần tránh sửa trực tiếp sau khi đã posting;
+- cancel chứng từ đã posting không nên xóa movement cũ, mà nên tạo reversal movement ở phase phù hợp;
+- mọi foreign key nghiệp vụ phải được kiểm tra cùng `business_id` để tránh ghi tồn kho sai tenant.
+
+---
+
 ## 6. Các nguyên tắc nghiệp vụ quan trọng
 
 ## 6.1. Business scope là bắt buộc
