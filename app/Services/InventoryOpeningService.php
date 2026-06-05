@@ -4,16 +4,15 @@ namespace App\Services;
 
 use App\Models\InventoryOpening;
 use App\Repositories\InventoryOpeningRepository;
+use App\Repositories\InventoryStockMovementRepository;
 use App\Repositories\WarehouseDocumentRepository;
 use App\Support\BusinessContext;
 use App\Traits\ApiResponse;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Ramsey\Collection\Collection;
 use Carbon\Carbon;
 
 class InventoryOpeningService extends BaseBusinessCrudService
@@ -41,16 +40,18 @@ class InventoryOpeningService extends BaseBusinessCrudService
 	public function __construct(
 		BusinessContext                              $businessContext,
 		private readonly InventoryOpeningRepository  $inventoryOpeningRepository,
-		private readonly WarehouseDocumentRepository $warehouseDocumentRepository
+		private readonly WarehouseDocumentRepository $warehouseDocumentRepository,
+        private readonly InventoryStockMovementRepository $inventoryStockMovementRepository,
 	)
 	{
 		parent::__construct($businessContext);
 	}
 
-	/**
-	 * @throws ContainerExceptionInterface
-	 * @throws NotFoundExceptionInterface
-	 */
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws ValidationException
+     */
 	public function groupedByWarehouse(array $filters): array
 	{
 		$businessId = $this->businessContext->resolveBusinessId($filters['business_id'] ?? null);
@@ -119,6 +120,9 @@ class InventoryOpeningService extends BaseBusinessCrudService
 
 			$document = $this->inventoryOpeningRepository->createForBusiness($businessId, $payload);
 
+            //dd($document);
+
+
 			return $document->load($this->with);
 
 		});
@@ -129,8 +133,9 @@ class InventoryOpeningService extends BaseBusinessCrudService
 	{
 		return DB::transaction(function () use ($id, $data) {
 			$businessId = $this->resolveBusinessId($data);
-			$productId = $data['product_id'] ?? null;
-			$warehouseId = $data['warehouse_id'] ?? null;
+            $model = $this->inventoryOpeningRepository->findForBusinessOrFail($businessId, $id);
+			$productId = $data['product_id'] ?? $model->product_id;
+			$warehouseId = $data['warehouse_id'] ?? $model->warehouse_id;
 			$resultCheckExitWareHouseDocument = $this->existsConfirmedDocumentForProductInWarehouse($businessId, $warehouseId, $productId);
 
 			if ($resultCheckExitWareHouseDocument) {
@@ -138,7 +143,6 @@ class InventoryOpeningService extends BaseBusinessCrudService
 					'product_id' => __('messages.inventory.opening_exists_movement'),
 				]);
 			}
-			$model = $this->inventoryOpeningRepository->findForBusinessOrFail($businessId, $id);
 
 			$payload = $this->payloadForSave($data, $businessId, true, $model);
 
@@ -148,11 +152,14 @@ class InventoryOpeningService extends BaseBusinessCrudService
 		});
 	}
 
-	public function show(int $id, array $data): Model
-	{
-		$businessId = $this->businessContext->resolveBusinessId();
-		return $this->inventoryOpeningRepository->findForBusinessOrFail($businessId,$id);
-	}
+    /**
+     * @throws ValidationException
+     */
+    public function show(int $id, array $data): Model
+    {
+        $businessId = $this->businessContext->resolveBusinessId();
+        return $this->inventoryOpeningRepository->findForBusinessOrFail($businessId, $id);
+    }
 
 	protected function payloadForSave(array $data, int $businessId, bool $isUpdate = false, ?InventoryOpening $model = null): array
 	{
@@ -189,7 +196,10 @@ class InventoryOpeningService extends BaseBusinessCrudService
 		);
 	}
 
-
+    protected function convertDataInventoryStockMovement(array $data): array
+    {
+        return [];
+    }
 
 
 
