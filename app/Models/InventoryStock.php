@@ -22,8 +22,8 @@ class InventoryStock extends Model
     {
         return [
             'quantity_on_hand' => 'decimal:2',
-            'avg_unit_cost' => 'decimal:2',
-            'inventory_value' => 'decimal:2',
+            'avg_unit_cost' => 'decimal:4',
+            'inventory_value' => 'decimal:4',
             'last_movement_at' => 'datetime',
         ];
     }

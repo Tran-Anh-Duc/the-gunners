@@ -12,18 +12,18 @@ class InventoryStockMovementRepository extends BaseRepository
 		$this->model = $model;
 	}
 
-	public function getModel():string
+	public function getModel(): string
 	{
 		return InventoryStockMovement::class;
 	}
 
-    public function createForBusiness(int $businessId, array $attributes)
-    {
-         $query = $this->model->newQuery();
-         $data = array_merge($attributes,[
-             'business_id' => $businessId,
-         ]);
-         return $query->create($data);
-    }
+	public function createForBusiness(int $businessId, array $attributes)
+	{
+		$query = $this->model->newQuery();
+		$data = array_merge($attributes, [
+			'business_id' => $businessId,
+		]);
+		return $query->create($data);
+	}
 
 }

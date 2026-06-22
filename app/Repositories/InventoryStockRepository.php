@@ -15,4 +15,18 @@ class InventoryStockRepository extends BaseRepository
 	{
 		return InventoryStock::class;
 	}
+
+	public function createForBusiness(int $businessId, array $attributes)
+	{
+		$query = $this->model->newQuery();
+
+		$data = array_merge($attributes, [
+			'business_id' => $businessId,
+		]);
+		echo '<pre>';
+		print_r($variable);
+		echo '</pre>';
+		die;
+		return $query->create($data);
+	}
 }

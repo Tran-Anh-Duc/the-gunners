@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\InventoryOpening;
+use App\Models\InventoryStockMovement;
 use App\Repositories\InventoryOpeningRepository;
 use App\Repositories\InventoryStockMovementRepository;
+use App\Repositories\InventoryStockRepository;
 use App\Repositories\WarehouseDocumentRepository;
 use App\Support\BusinessContext;
 use App\Traits\ApiResponse;
@@ -38,20 +40,21 @@ class InventoryOpeningService extends BaseBusinessCrudService
 	];
 
 	public function __construct(
-		BusinessContext                              $businessContext,
-		private readonly InventoryOpeningRepository  $inventoryOpeningRepository,
-		private readonly WarehouseDocumentRepository $warehouseDocumentRepository,
-        private readonly InventoryStockMovementRepository $inventoryStockMovementRepository,
+		BusinessContext                                   $businessContext,
+		private readonly InventoryOpeningRepository       $inventoryOpeningRepository,
+		private readonly WarehouseDocumentRepository      $warehouseDocumentRepository,
+		private readonly InventoryStockMovementRepository $inventoryStockMovementRepository,
+		private readonly InventoryStockRepository         $inventoryStockRepository,
 	)
 	{
 		parent::__construct($businessContext);
 	}
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     * @throws ValidationException
-     */
+	/**
+	 * @throws ContainerExceptionInterface
+	 * @throws NotFoundExceptionInterface
+	 * @throws ValidationException
+	 */
 	public function groupedByWarehouse(array $filters): array
 	{
 		$businessId = $this->businessContext->resolveBusinessId($filters['business_id'] ?? null);
@@ -120,8 +123,17 @@ class InventoryOpeningService extends BaseBusinessCrudService
 
 			$document = $this->inventoryOpeningRepository->createForBusiness($businessId, $payload);
 
-            //dd($document);
+			$convertDataInventoryStockMovement = $this->convertDataInventoryStockMovement($document);
 
+			$movement = $this->inventoryStockMovementRepository->createForBusiness($businessId,$convertDataInventoryStockMovement);
+
+			$convertDataInventoryStock = $this->convertDataInventoryStock($document,$movement);
+
+			$this->inventoryStockRepository->createForBusiness($businessId, $convertDataInventoryStock);
+			echo '<pre>';
+			print_r($convertDataInventoryStock);
+			echo '</pre>';
+			die;
 
 			return $document->load($this->with);
 
@@ -133,7 +145,7 @@ class InventoryOpeningService extends BaseBusinessCrudService
 	{
 		return DB::transaction(function () use ($id, $data) {
 			$businessId = $this->resolveBusinessId($data);
-            $model = $this->inventoryOpeningRepository->findForBusinessOrFail($businessId, $id);
+			$model = $this->inventoryOpeningRepository->findForBusinessOrFail($businessId, $id);
 			$productId = $data['product_id'] ?? $model->product_id;
 			$warehouseId = $data['warehouse_id'] ?? $model->warehouse_id;
 			$resultCheckExitWareHouseDocument = $this->existsConfirmedDocumentForProductInWarehouse($businessId, $warehouseId, $productId);
@@ -152,14 +164,14 @@ class InventoryOpeningService extends BaseBusinessCrudService
 		});
 	}
 
-    /**
-     * @throws ValidationException
-     */
-    public function show(int $id, array $data): Model
-    {
-        $businessId = $this->businessContext->resolveBusinessId();
-        return $this->inventoryOpeningRepository->findForBusinessOrFail($businessId, $id);
-    }
+	/**
+	 * @throws ValidationException
+	 */
+	public function show(int $id, array $data): Model
+	{
+		$businessId = $this->businessContext->resolveBusinessId();
+		return $this->inventoryOpeningRepository->findForBusinessOrFail($businessId, $id);
+	}
 
 	protected function payloadForSave(array $data, int $businessId, bool $isUpdate = false, ?InventoryOpening $model = null): array
 	{
@@ -196,10 +208,40 @@ class InventoryOpeningService extends BaseBusinessCrudService
 		);
 	}
 
-    protected function convertDataInventoryStockMovement(array $data): array
-    {
-        return [];
-    }
+	protected function convertDataInventoryStockMovement(InventoryOpening $opening): array
+	{
+		$quantity = (float)$opening->quantity;
+		$unitCost = (float)($opening->unit_cost ?? 0);
+
+		return [
+			'business_id' => $opening->business_id,
+			'warehouse_id' => $opening->warehouse_id,
+			'product_id' => $opening->product_id,
+			'unit_id' => $opening->unit_id,
+			'source_type' => InventoryStockMovement::SOURCE_INVENTORY_OPENING,
+			'source_id' => $opening->id,
+			'source_line_id' => $opening->id,
+			'movement_type' => InventoryStockMovement::TYPE_OPENING,
+			'movement_date' => $opening->opening_date,
+			'posted_at' => now(),
+			'quantity_delta' => $quantity,
+			'unit_cost' => $unitCost,
+			'value_delta' => $quantity * $unitCost,
+			'created_by' => $opening->created_by,
+		];
+	}
+	protected function convertDataInventoryStock(InventoryOpening $opening,InventoryStockMovement $movement): array
+	{
+		return [
+			'warehouse_id' => $opening->warehouse_id,
+			'product_id' => $opening->product_id,
+			'quantity_on_hand' => $opening->quantity,
+			'avg_unit_cost' => $opening->unit_cost,
+			'inventory_value' => $opening->total_cost,
+			'last_movement_id' => $movement->id,
+			'last_movement_at' => $movement->posted_at,
+		];
+	}
 
 
 
