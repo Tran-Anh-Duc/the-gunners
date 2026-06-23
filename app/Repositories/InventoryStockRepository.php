@@ -23,10 +23,6 @@ class InventoryStockRepository extends BaseRepository
 		$data = array_merge($attributes, [
 			'business_id' => $businessId,
 		]);
-		echo '<pre>';
-		print_r($variable);
-		echo '</pre>';
-		die;
 		return $query->create($data);
 	}
 }

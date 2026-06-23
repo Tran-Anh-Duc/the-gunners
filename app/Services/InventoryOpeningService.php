@@ -130,10 +130,6 @@ class InventoryOpeningService extends BaseBusinessCrudService
 			$convertDataInventoryStock = $this->convertDataInventoryStock($document,$movement);
 
 			$this->inventoryStockRepository->createForBusiness($businessId, $convertDataInventoryStock);
-			echo '<pre>';
-			print_r($convertDataInventoryStock);
-			echo '</pre>';
-			die;
 
 			return $document->load($this->with);
 
