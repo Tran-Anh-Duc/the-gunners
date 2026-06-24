@@ -123,7 +123,7 @@ class InventoryOpeningService extends BaseBusinessCrudService
 
 			$document = $this->inventoryOpeningRepository->createForBusiness($businessId, $payload);
 
-			$convertDataInventoryStockMovement = $this->convertDataInventoryStockMovement($document);
+			$convertDataInventoryStockMovement = $this->convertDataInventoryStockMovement($document,false,0);
 
 			$movement = $this->inventoryStockMovementRepository->createForBusiness($businessId,$convertDataInventoryStockMovement);
 
@@ -155,6 +155,17 @@ class InventoryOpeningService extends BaseBusinessCrudService
 			$payload = $this->payloadForSave($data, $businessId, true, $model);
 
 			$document = $this->inventoryOpeningRepository->updateForBusiness($businessId, $payload, $id);
+			$countInventoryStockMoment = $this->inventoryStockMovementRepository->countBySource($businessId,InventoryStockMovement::SOURCE_INVENTORY_OPENING ,$document->id);
+
+			$convertDataInventoryStockMovement = $this->convertDataInventoryStockMovement($document,true,$countInventoryStockMoment);
+
+			$movement = $this->inventoryStockMovementRepository->createForBusiness($businessId,$convertDataInventoryStockMovement);
+
+			$findInventoryStock = $this->inventoryStockRepository->findByWarehouseAndProduct($businessId, $productId, $warehouseId);
+
+			$convertDataInventoryStock = $this->convertDataInventoryStock($document,$movement);
+
+			$this->inventoryStockRepository->updateForBusiness($businessId, $convertDataInventoryStock,$findInventoryStock->id);
 
 			return $document->load($this->with);
 		});
@@ -204,7 +215,7 @@ class InventoryOpeningService extends BaseBusinessCrudService
 		);
 	}
 
-	protected function convertDataInventoryStockMovement(InventoryOpening $opening): array
+	protected function convertDataInventoryStockMovement(InventoryOpening $opening,$update = false,$revisionNo = 0): array
 	{
 		$quantity = (float)$opening->quantity;
 		$unitCost = (float)($opening->unit_cost ?? 0);
@@ -216,7 +227,7 @@ class InventoryOpeningService extends BaseBusinessCrudService
 			'unit_id' => $opening->unit_id,
 			'source_type' => InventoryStockMovement::SOURCE_INVENTORY_OPENING,
 			'source_id' => $opening->id,
-			'source_line_id' => $opening->id,
+			'source_line_id' => !$update ? $opening->id : ($opening->id * 1000) +  $revisionNo,
 			'movement_type' => InventoryStockMovement::TYPE_OPENING,
 			'movement_date' => $opening->opening_date,
 			'posted_at' => now(),

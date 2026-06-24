@@ -26,4 +26,14 @@ class InventoryStockMovementRepository extends BaseRepository
 		return $query->create($data);
 	}
 
+	public function countBySource(int $businessId,string $sourceType,int $sourceId): int
+	{
+		$query = $this->model->newQuery();
+		return $query->where([
+			'business_id' => $businessId,
+			'source_type' => $sourceType,
+			'source_id' => $sourceId,
+		])->count();
+	}
+
 }
