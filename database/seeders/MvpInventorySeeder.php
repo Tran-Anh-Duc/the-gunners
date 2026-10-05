@@ -14,6 +14,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -41,15 +42,69 @@ class MvpInventorySeeder extends Seeder
             $business->restore();
         }
 
-        BusinessSequence::query()->where('business_id', $business->id)->delete();
-        BusinessModule::query()->where('business_id', $business->id)->delete();
-        BusinessUser::query()->where('business_id', $business->id)->delete();
-        Product::withTrashed()->where('business_id', $business->id)->forceDelete();
-        Category::withTrashed()->where('business_id', $business->id)->forceDelete();
-        Supplier::withTrashed()->where('business_id', $business->id)->forceDelete();
-        Customer::withTrashed()->where('business_id', $business->id)->forceDelete();
-        Warehouse::withTrashed()->where('business_id', $business->id)->forceDelete();
-        Unit::withTrashed()->where('business_id', $business->id)->forceDelete();
+	    // Reset dữ liệu demo theo đúng thứ tự FK: child -> parent.
+
+// 1. Xóa warehouse document details trước.
+//    warehouse_document_details.product_id -> products.id
+	    $warehouseDocumentIds = DB::table('warehouse_documents')
+		    ->where('business_id', $business->id)
+		    ->pluck('id');
+
+	    if ($warehouseDocumentIds->isNotEmpty()) {
+		    DB::table('warehouse_document_details')
+			    ->whereIn('warehouse_document_id', $warehouseDocumentIds)
+			    ->delete();
+
+		    // 2. Sau khi xóa details mới được xóa warehouse documents.
+		    DB::table('warehouse_documents')
+			    ->where('business_id', $business->id)
+			    ->delete();
+	    }
+
+// 3. Xóa inventory openings trước khi xóa product / warehouse / unit.
+//    inventory_openings có FK RESTRICT tới các master này.
+	    DB::table('inventory_openings')
+		    ->where('business_id', $business->id)
+		    ->delete();
+
+// 4. Xóa các dữ liệu phụ thuộc business.
+	    BusinessSequence::query()
+		    ->where('business_id', $business->id)
+		    ->delete();
+
+	    BusinessModule::query()
+		    ->where('business_id', $business->id)
+		    ->delete();
+
+	    BusinessUser::query()
+		    ->where('business_id', $business->id)
+		    ->delete();
+
+// 5. Cuối cùng mới xóa master data.
+//    Product phải xóa trước Category / Unit vì Product tham chiếu chúng.
+	    Product::withTrashed()
+		    ->where('business_id', $business->id)
+		    ->forceDelete();
+
+	    Category::withTrashed()
+		    ->where('business_id', $business->id)
+		    ->forceDelete();
+
+	    Supplier::withTrashed()
+		    ->where('business_id', $business->id)
+		    ->forceDelete();
+
+	    Customer::withTrashed()
+		    ->where('business_id', $business->id)
+		    ->forceDelete();
+
+	    Warehouse::withTrashed()
+		    ->where('business_id', $business->id)
+		    ->forceDelete();
+
+	    Unit::withTrashed()
+		    ->where('business_id', $business->id)
+		    ->forceDelete();
 
         $owner = $this->upsertUser('Demo Owner', 'owner@demo-store.local', '0901000100');
         $manager = $this->upsertUser('Demo Manager', 'manager@demo-store.local', '0901000101');

@@ -32,7 +32,7 @@ class WarehouseController extends ApiController
         [, $query] = $this->warehouseService->paginate(
 	        array_merge($request->validated(),$request->only($this->warehouseService->searchableFilters()))
         );
-		
+
 		if ($request->boolean('is_option')) {
             return $this->successResponse(
                 'Fetched successfully.',
@@ -41,7 +41,7 @@ class WarehouseController extends ApiController
                 $query->select(['id', 'name','code'])->get()
             );
         }
-		
+
         return $this->successResponse(
             'Fetched successfully.',
             'list_success',
