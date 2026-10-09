@@ -55,8 +55,12 @@ class WarehouseDocumentRepository extends BaseRepository
 		return $query->orderByDesc('warehouse_documents.id');
 	}
 
-	public function findForBusinessOrFail(int $id, int $businessId)
-	{
+
+	public function findForBusinessOrFail(
+		int $id,
+		int $businessId,
+		bool $lockForUpdate = false
+	): WarehouseDocument {
 		$query = $this->model->newQuery()->with([
 			'business',
 			'warehouse',
@@ -66,8 +70,14 @@ class WarehouseDocumentRepository extends BaseRepository
 			'details.product',
 			'details.unit',
 		]);
+
 		$query->where('business_id', $businessId);
 		$query->select('warehouse_documents.*');
+
+		if ($lockForUpdate) {
+			$query->lockForUpdate();
+		}
+
 		return $query->findOrFail($id);
 	}
 
@@ -88,7 +98,14 @@ class WarehouseDocumentRepository extends BaseRepository
 			->where('business_id', $businessId)
 			->findOrFail($id);
 
-		unset($attributes['business_id'], $attributes['document_code'], $attributes['created_by']);
+		unset(
+			$attributes['business_id'],
+			$attributes['document_code'],
+			$attributes['created_by'],
+			$attributes['status'],
+			$attributes['approved_by'],
+			$attributes['approved_at']
+		);
 		$attributes['updated_by'] = auth()->id();
 
 		$document->update($attributes);
@@ -108,9 +125,19 @@ class WarehouseDocumentRepository extends BaseRepository
 		return $query->exists();
 	}
 
+	public function claimInventoryProcessing(int $documentId): bool
+	{
+		$claimed = $this->model->newQuery()
+			->where('id', $documentId)
+			->where('status', WarehouseDocument::STATUS_CONFIRMED)
+			->where('inventory_status', 'pending')
+			->update([
+				'inventory_status' => 'processing',
+				'inventory_processing_started_at' => now(),
+				'inventory_error' => null,
+				'updated_at' => now(),
+			]);
 
-
-
-
-
+		return $claimed === 1;
+	}
 }

@@ -1,0 +1,35 @@
+SENIOR FRONTEND / FULL-STACK DEVELOPER
+
+Có 3+ năm kinh nghiệm phát triển ứng dụng web với các công nghệ React.js, Vue.js và Next.js. Có kinh nghiệm tham gia phát triển và duy trì các hệ thống từ quy mô nhỏ đến lớn, phân tích yêu cầu, thiết kế kiến trúc frontend, xây dựng component có khả năng tái sử dụng và tối ưu hiệu năng ứng dụng.
+
+TECHNICAL SKILLS
+
+- React.js: 3+ năm kinh nghiệm. Thành thạo xây dựng SPA, quản lý state, component architecture, REST API và tối ưu hiệu năng.
+
+- Vue.js: 3+ năm kinh nghiệm. Thành thạo Vue 2/3, Composition API, Pinia/Vuex, Vue Router và xây dựng hệ thống frontend có cấu trúc rõ ràng.
+
+- Next.js: 3+ năm kinh nghiệm. Phát triển ứng dụng SSR/SSG, routing, API integration, authentication và tối ưu SEO/performance.
+
+- Database: Thành thạo SQL và PostgreSQL. Có kinh nghiệm thiết kế database, xây dựng query phức tạp, indexing, transaction, tối ưu truy vấn và xử lý dữ liệu với khối lượng lớn.
+
+- Strapi: Có kinh nghiệm xây dựng và quản lý Headless CMS, thiết kế Content Type, REST API, Authentication/Authorization và tích hợp với frontend.
+
+- Backend & API: Có kinh nghiệm làm việc với RESTful API, authentication, authorization, phân quyền và tích hợp các hệ thống third-party.
+
+- Architecture: Có khả năng thiết kế cấu trúc dự án, phân chia module, component hóa, xây dựng coding convention và reusable components.
+
+- Performance: Có kinh nghiệm tối ưu rendering, bundle size, API calls, database queries và cải thiện trải nghiệm người dùng.
+
+- Development Workflow: Thành thạo Git, Git Flow, code review, debugging, CI/CD, Docker và triển khai trên môi trường development/production.
+
+SENIOR-LEVEL CAPABILITIES
+
+- Phân tích và làm rõ yêu cầu nghiệp vụ.
+- Thiết kế kiến trúc và lựa chọn công nghệ phù hợp.
+- Xây dựng hệ thống frontend có khả năng mở rộng và bảo trì.
+- Review code và đảm bảo coding standards.
+- Phân tích, debug và xử lý các vấn đề kỹ thuật phức tạp.
+- Tối ưu hiệu năng frontend, API và database.
+- Thiết kế và cải thiện cấu trúc database.
+- Làm việc độc lập và phối hợp với Backend, QA, Product và các thành viên khác trong team.
+- Hỗ trợ định hướng kỹ thuật và chia sẻ kiến thức cho các thành viên trong team.

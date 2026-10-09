@@ -1,9 +1,13 @@
 <?php
-	
+
 namespace App\Services;
-	
-	
+
+
+use App\Jobs\ProcessWarehouseDocumentInventory;
 use App\Models\WarehouseDocument;
+use App\Repositories\InventoryOpeningRepository;
+use App\Repositories\InventoryStockMovementRepository;
+use App\Repositories\InventoryStockRepository;
 use App\Repositories\WarehouseDocumentDetailRepository;
 use App\Repositories\WarehouseDocumentRepository;
 use App\Support\BusinessContext;
@@ -12,11 +16,11 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-	
+
 class WarehouseDocumentService extends BaseBusinessCrudService
 {
 	use ApiResponse;
-	
+
 	protected array $with = [
 		'business',
 		'warehouse',
@@ -26,7 +30,7 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 		'details.product',
 		'details.unit',
 	];
-	
+
 	protected array $searchable = [
 		'keyword',
 		'document_type',
@@ -36,16 +40,18 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 		'document_date_from',
 		'document_date_to',
 	];
-	
-	
+
+
 	public function __construct(
 		private readonly WarehouseDocumentRepository       $warehouseDocumentRepository,
 		private readonly WarehouseDocumentDetailRepository $warehouseDocumentDetailRepository,
 		protected BusinessContext                          $businessContext,
+		private readonly InventoryStockRepository         $inventoryStockRepository,
+		private readonly InventoryStockMovementRepository $inventoryStockMovementRepository,
 	)
 	{
 	}
-	
+
 	/**
 	 * Tạo query danh sách warehouse trong business.
 	 *
@@ -60,7 +66,7 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 		$businessId = $this->businessContext->resolveBusinessId($filters['business_id'] ?? null);
 		return $data = $this->warehouseDocumentRepository->queryForBusiness($businessId, $filters);
 	}
-	
+
 	/**
 	 * Lấy thông tin chi tiết một warehouse trong business hiện tại.
 	 *
@@ -73,29 +79,27 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 		$businessId = $this->businessContext->resolveBusinessId();
 		return $this->warehouseDocumentRepository->findForBusinessOrFail($id, $businessId);
 	}
-	
+
 	public function create(array $data): Model
 	{
 		return DB::transaction(function () use ($data) {
 			$businessId = $this->resolveBusinessId($data);
-			
+
 			$prepared = $this->prepareDocumentPayloadAndRows($data, $businessId, false);
-			
-			$document = $this->warehouseDocumentRepository->createForBusiness(
-				$businessId,
-				$prepared['payload']
-			);
-			
+
+			$document = $this->warehouseDocumentRepository->createForBusiness($businessId,$prepared['payload']);
+
 			if (!empty($prepared['rows'])) {
 				$rows = $this->attachDocumentIdToRows($prepared['rows'], $document->id);
-				
+
 				$this->warehouseDocumentDetailRepository->insertRows($rows);
 			}
-			
+
 			return $document->load($this->with);
 		});
 	}
-	
+
+
 	/**
 	 * @param int $id
 	 * @param array $data
@@ -105,98 +109,78 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 	{
 		return DB::transaction(function () use ($id, $data) {
 			$businessId = $this->resolveBusinessId($data);
-			
-			$prepared = $this->prepareDocumentPayloadAndRows($data, $businessId, true);
-			
-			$document = $this->warehouseDocumentRepository->updateForBusiness(
-				$businessId,
-				$prepared['payload'],
-				$id
-			);
-			
-			if ($prepared['rows'] !== null) {
-				$rows = $this->attachDocumentIdToRows($prepared['rows'], $document->id);
-				$this->warehouseDocumentDetailRepository->replaceRowsForDocument(
-					$document->id,
-					$rows
+
+			// Lấy phiếu và khóa bản ghi trong transaction.
+			$document = $this->warehouseDocumentRepository->findForBusinessOrFail($id, $businessId, true);
+
+			if ($document->status !== 'draft') {
+				throw new \DomainException(
+					'Chỉ được chỉnh sửa phiếu ở trạng thái nháp.'
 				);
 			}
-			
-			
+
+			$prepared = $this->prepareDocumentPayloadAndRows($data,$businessId,true);
+
+			$document = $this->warehouseDocumentRepository->updateForBusiness($businessId,$prepared['payload'],$id);
+
+			if ($prepared['rows'] !== null) {
+				$rows = $this->attachDocumentIdToRows($prepared['rows'],$document->id);
+
+				$this->warehouseDocumentDetailRepository->replaceRowsForDocument($document->id, $rows);
+			}
+
 			return $document->load($this->with);
 		});
 	}
-	
-	protected function payloadForSave(array $data, int $businessId, bool $isUpdate = false): array
-	{
-		$now = Carbon::now();
-		
+
+	protected function payloadForSave(
+		array $data,
+		int $businessId,
+		bool $isUpdate = false
+	): array {
 		if (!$isUpdate) {
-			$status = $data['status'] ?? 'draft';
-			
-			$payload = [
+			return [
 				'business_id' => $businessId,
 				'document_type' => $data['document_type'] ?? null,
 				'warehouse_id' => $data['warehouse_id'] ?? null,
 				'document_date' => $data['document_date'] ?? null,
-				'status' => $status,
+				'status' => WarehouseDocument::STATUS_DRAFT,
 				'reference_code' => $data['reference_code'] ?? null,
 				'note' => $data['note'] ?? null,
-				
 				'subtotal_amount' => $data['subtotal_amount'] ?? 0,
 				'tax_amount' => $data['tax_amount'] ?? 0,
 				'total_amount' => $data['total_amount'] ?? 0,
-				
 				'created_by' => auth()->id(),
+				'approved_by' => null,
+				'approved_at' => null,
 			];
-			
-			if ($status === 'confirmed') {
-				$payload['approved_by'] = auth()->id();
-				$payload['approved_at'] = $now;
-			} else {
-				$payload['approved_by'] = null;
-				$payload['approved_at'] = null;
-			}
-			
-			return $payload;
 		}
-		
+
 		$payload = [
 			'updated_by' => auth()->id(),
 		];
-		
+
 		$fields = [
 			'document_type',
 			'warehouse_id',
 			'document_date',
-			'status',
 			'reference_code',
 			'note',
 			'subtotal_amount',
 			'tax_amount',
 			'total_amount',
 		];
-		
+
 		foreach ($fields as $field) {
 			if (array_key_exists($field, $data)) {
 				$payload[$field] = $data[$field];
 			}
 		}
-		
-		if (array_key_exists('status', $data)) {
-			if ($data['status'] === 'confirmed') {
-				$payload['approved_by'] = auth()->id();
-				$payload['approved_at'] = $now;
-			} else {
-				$payload['approved_by'] = null;
-				$payload['approved_at'] = null;
-			}
-		}
-		
+
 		return $payload;
 	}
-	
-	
+
+
 	protected function calculateDetailAmounts(
 		float $quantity,
 		float $unitPrice,
@@ -207,37 +191,37 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 		$quantity = (float)$quantity;
 		$unitPrice = (float)$unitPrice;
 		$taxRate = (float)$taxRate;
-		
+
 		if ($priceIncludesTax) {
 			// Giá đã bao gồm thuế
 			$total = round($quantity * $unitPrice, 2);
-			
+
 			$subtotal = round($total / (1 + $taxRate / 100), 2);
 			$tax = round($total - $subtotal, 2);
 		} else {
 			// Giá chưa bao gồm thuế
 			$subtotal = round($quantity * $unitPrice, 2);
-			
+
 			$tax = round($subtotal * $taxRate / 100, 2);
 			$total = round($subtotal + $tax, 2);
 		}
-		
+
 		return [
 			'subtotal' => $subtotal,
 			'tax_price' => $tax,
 			'total_price' => $total,
 		];
 	}
-	
+
 	protected function prepareDetailRowsAndTotals(array $details, bool $priceIncludesTax = false): array
 	{
 		$now = now();
 		$rows = [];
-		
+
 		$subtotalAmount = 0;
 		$taxAmount = 0;
 		$totalAmount = 0;
-		
+
 		foreach ($details as $detail) {
 			$amounts = $this->calculateDetailAmounts(
 				(float)($detail['quantity'] ?? 0),
@@ -245,7 +229,7 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 				(float)($detail['tax_rate'] ?? 0),
 				$priceIncludesTax
 			);
-			
+
 			$row = [
 				'product_id' => $detail['product_id'] ?? null,
 				'product_name' => $detail['product_name'] ?? null,
@@ -261,14 +245,14 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 				'created_at' => $now,
 				'updated_at' => $now,
 			];
-			
+
 			$subtotalAmount += $row['subtotal'];
 			$taxAmount += $row['tax_price'];
 			$totalAmount += $row['total_price'];
-			
+
 			$rows[] = $row;
 		}
-		
+
 		return [
 			'rows' => $rows,
 			'totals' => [
@@ -278,15 +262,15 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 			],
 		];
 	}
-	
+
 	protected function prepareDocumentPayloadAndRows(array $data, int $businessId, bool $isUpdate = false): array
 	{
 		$hasDetails = array_key_exists('details', $data);
 		$rows = null;
 		$isPriceIncludesTax = (bool)($data['is_price_includes_tax'] ?? false);
-		
+
 		$payloadData = $data;
-		
+
 		if ($hasDetails) {
 			$details = $data['details'];
 			$prepared = $this->prepareDetailRowsAndTotals($details, $isPriceIncludesTax);
@@ -294,13 +278,13 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 			unset($payloadData['details']);
 			$payloadData = array_merge($payloadData, $prepared['totals']);
 		}
-		
+
 		return [
 			'payload' => $this->payloadForSave($payloadData, $businessId, $isUpdate),
 			'rows' => $rows,
 		];
 	}
-	
+
 	protected function attachDocumentIdToRows(array $rows, int $documentId): array
 	{
 		return array_map(function ($row) use ($documentId) {
@@ -308,5 +292,47 @@ class WarehouseDocumentService extends BaseBusinessCrudService
 			return $row;
 		}, $rows);
 	}
-		
+
+	public function confirm(int $id): Model
+	{
+		$businessId = $this->businessContext->resolveBusinessId();
+
+		return DB::transaction(function () use ($id, $businessId) {
+			// Khóa phiếu để tránh hai request xác nhận cùng lúc.
+			$document = $this->warehouseDocumentRepository->findForBusinessOrFail($id, $businessId, true);
+
+			// Chỉ cho phép xác nhận phiếu Draft.
+			if ($document->status !== WarehouseDocument::STATUS_DRAFT) {
+				throw new \DomainException(
+					'Chỉ được xác nhận phiếu ở trạng thái nháp.'
+				);
+			}
+
+			// Không xác nhận phiếu chưa có chi tiết.
+			if (!$document->details()->exists()) {
+				throw new \DomainException(
+					'Không thể xác nhận phiếu chưa có sản phẩm.'
+				);
+			}
+
+			// Chuyển trạng thái phiếu, chưa cập nhật tồn kho.
+			$document->status = WarehouseDocument::STATUS_CONFIRMED;
+			$document->approved_by = auth()->id();
+			$document->approved_at = now();
+			$document->inventory_status = 'pending';
+			$document->inventory_processing_started_at = null;
+			$document->inventory_processed_at = null;
+			$document->inventory_error = null;
+
+			$document->save();
+
+			// Job sẽ được tạo ở bước tiếp theo.
+			// Chỉ dispatch sau khi transaction commit.
+			ProcessWarehouseDocumentInventory::dispatch($document->id)->afterCommit();
+
+
+			return $document->load($this->with);
+		});
+	}
+
 }
