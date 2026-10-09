@@ -12,15 +12,14 @@ class WarehouseDocument extends Model
 {
     use SoftDeletes;
 
-    public const TYPE_IMPORT = 'import';
+// Document types
+	public const TYPE_IMPORT = 'import'; // Nhập kho
+	public const TYPE_EXPORT = 'export'; // Xuất kho
 
-    public const TYPE_EXPORT = 'export';
-
-    public const STATUS_DRAFT = 'draft';
-
-    public const STATUS_CONFIRMED = 'confirmed';
-
-    public const STATUS_CANCELLED = 'cancelled';
+// Document statuses
+	public const STATUS_DRAFT = 'draft'; // Nháp
+	public const STATUS_CONFIRMED = 'confirmed'; // Đã xác nhận
+	public const STATUS_CANCELLED = 'cancelled'; // Đã hủy
 
     protected $fillable = [
         'business_id',
@@ -50,24 +49,24 @@ class WarehouseDocument extends Model
             'total_amount' => 'decimal:2',
         ];
     }
-	
+
 	protected static function booted(): void
 	{
 		static::creating(function (self $document): void {
 			if (!empty($document->document_code) || empty($document->business_id)) {
 				return;
 			}
-			
+
 			$prefix = match ($document->document_type) {
 				'import' => 'WH-IMPORT',
 				'export' => 'WH-EXPORT',
 				default => null,
 			};
-			
+
 			if ($prefix === null) {
 				return;
 			}
-			
+
 			$document->document_code = BusinessSequenceGenerator::nextFormatted(
 				self::class,
 				(int)$document->business_id,
@@ -76,7 +75,7 @@ class WarehouseDocument extends Model
 			);
 		});
 	}
-	
+
     public function business(): BelongsTo
     {
         return $this->belongsTo(Business::class);
